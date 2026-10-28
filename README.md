@@ -1,12 +1,12 @@
 # MNIT × Codevidhya Ideathon 2026
 
-A responsive, buildless landing page. Original CSS notebook illustration, pointer-reactive depth, floating pencil, scroll reveals, animated counters, pencil cursor companion, accessible category tabs, mobile navigation, FAQs and registration information dialog. No runtime dependencies or package install required. Reduced-motion preferences are respected. Google Fonts have local system fallbacks.
+A responsive, buildless landing page. Supplied 3D hero artwork with pointer-reactive depth, scroll reveals, animated counters, pencil cursor companion, accessible category tabs, mobile navigation, FAQs and registration information dialog. No runtime dependencies or package install required. Reduced-motion preferences are respected. Google Fonts have local system fallbacks.
 
 ## Enhanced effects
 
 `dist/effects.css` and `dist/effects.js` add a pointer-responsive hero constellation, holographic orbit rings, a 3D particle playground with sphere/torus/helix morphs and three inspiration prompts, pencil spark trails, magnetic buttons, pointer-lit tilted round cards, scroll-illuminated typography, mentor orbit motion and video/CTA lighting. These are interactive visual effects, not a connected AI service. The playground runs in canvas with bounded particle counts and sparse linear mesh connections. Animation work stops outside relevant viewports and while the document is hidden. A persistent motion toggle and the operating system's reduced-motion preference control the experience. The native scroll behavior stays intact.
 
-See `IMAGE_PROMPTS.md` for matching image prompts, target filenames and intended placements. Generated images have not been added yet.
+The four user-supplied illustrations are integrated through `dist/artwork.css`: `hero-idea.png` in the hero, `mentorship-lab.png` in the mentorship section, `round-illustrations.png` displayed through three CSS sprite windows, and `how-to-apply-poster.png` in the video placeholder. Original image pixels and transparency are preserved. The hero loads with high priority; lower-page images load lazily. The mentorship image is an imagined scene, and the video remains marked coming soon. `IMAGE_PROMPTS.md` retains the original art direction and generation briefs.
 
 ## Preview
 

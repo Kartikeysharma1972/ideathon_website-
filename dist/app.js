@@ -120,13 +120,13 @@
   });
 
   const art = document.querySelector('.hero-art');
-  const notebook = document.querySelector('.notebook');
+  const heroObject = document.querySelector('[data-hero-object]');
   art.addEventListener('pointermove', event => {
     if (!finePointer.matches || reducedMotion.matches || document.documentElement.classList.contains('motion-paused')) return;
     const rect = art.getBoundingClientRect();
     const x = (event.clientX - rect.left) / rect.width - 0.5;
     const y = (event.clientY - rect.top) / rect.height - 0.5;
-    notebook.style.transform = `rotate(-10deg) rotateY(${x * 13}deg) rotateX(${-y * 10}deg)`;
+    heroObject.style.transform = `rotateY(${x * 13}deg) rotateX(${-y * 10}deg)`;
   }, { passive: true });
-  art.addEventListener('pointerleave', () => { notebook.style.transform = ''; });
+  art.addEventListener('pointerleave', () => { heroObject.style.transform = ''; });
 })();

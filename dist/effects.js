@@ -220,7 +220,7 @@
       trail.length = 0; drawTrail(1);
       document.querySelectorAll('.button').forEach(button => { button.style.removeProperty('--magnet-x'); button.style.removeProperty('--magnet-y'); });
       document.querySelectorAll('.round-card').forEach(card => { card.style.removeProperty('--tilt-x'); card.style.removeProperty('--tilt-y'); });
-      document.querySelector('.notebook').style.transform = '';
+      document.querySelector('[data-hero-object]').style.transform = '';
       drawHero(); drawLab(1);
     }
     scrollDirty = true; schedule();

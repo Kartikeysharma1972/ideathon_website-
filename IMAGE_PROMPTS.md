@@ -1,6 +1,6 @@
 # Images for the next visual pass
 
-Generate these in the same session or reuse the first image as a style reference. The current website already includes the new motion effects; these images will replace selected CSS illustrations after you supply the generated files.
+The user-supplied images based on these prompts are now integrated. This file retains the generation brief for future replacements. The implemented files are `hero-idea.png`, `mentorship-lab.png`, `round-illustrations.png` (a three-object strip displayed through CSS windows), and `how-to-apply-poster.png` in `dist/assets/`.
 
 Shared direction: premium, imaginative education meets experimental technology; sculptural 3D illustration; tactile cream paper, satin violet, translucent lilac glass and small acid-lime accents. Palette: warm ivory #F7F6EE, violet #7850CE, lilac #C5A5EC, lime #DCF68D, deep aubergine #11101A. Avoid generic stock-photo styling, busy compositions, logos, lettering, watermarks, and UI mockups. Website text and buttons will remain real HTML.
 
