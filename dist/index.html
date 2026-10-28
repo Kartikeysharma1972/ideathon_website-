@@ -8,7 +8,7 @@
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;450;500;550;600;650;700&family=Space+Grotesk:wght@400;500;600;700&family=Caveat:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css"><script src="app.js" defer></script>
+  <link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="effects.css"><script src="app.js" defer></script><script src="effects.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -29,7 +29,8 @@
         <div class="hero-actions"><a href="#apply" class="button button-purple">Start your journey <span>↗</span></a><a href="#how-to" class="video-link"><span class="small-play">▶</span> How to apply</a></div>
         <div class="hero-meta"><span><i class="tiny-icon">✎</i> Classes 6–12</span><span><i class="tiny-icon">♧</i> Teams of 3–4</span><span><i class="tiny-icon">⌖</i> MNIT, Jaipur</span></div>
       </div>
-      <div class="hero-art" aria-label="An illustrated idea notebook with a pencil, orbiting spark and floating notes" role="img">
+      <div class="hero-art" aria-label="An illustrated idea notebook surrounded by a glowing, interactive constellation" role="img">
+        <canvas class="hero-constellation" aria-hidden="true"></canvas><div class="holo-ring" aria-hidden="true"></div><div class="holo-ring ring-offset" aria-hidden="true"></div>
         <div class="art-orbit orbit-one"></div><div class="art-orbit orbit-two"></div><div class="purple-glow"></div>
         <span class="art-plus plus-one">✳</span><span class="art-plus plus-two">+</span><span class="art-dot"></span>
         <div class="note note-top"><span class="mini-spark">✧</span> Your next big thing<br><strong>starts right here.</strong><svg viewBox="0 0 100 65" aria-hidden="true"><path d="M9 8 Q80 -2 68 46 M50 34 L68 49 81 31"/></svg></div>
@@ -47,7 +48,7 @@
       </div>
       <a class="scroll-hint" href="#about"><span class="scroll-mouse"><i></i></span> A LITTLE SCROLL. A LOT TO DISCOVER. <span>↓</span></a>
     </section>
-    <div class="ticker" aria-hidden="true"><div class="ticker-track"><span>BIG QUESTIONS</span><i>✳</i><span>BOLDER IDEAS</span><i>✳</i><span>REAL-WORLD IMPACT</span><i>✳</i><span>YOUR NEXT CHAPTER</span><i>✳</i><span>BIG QUESTIONS</span><i>✳</i><span>BOLDER IDEAS</span><i>✳</i><span>REAL-WORLD IMPACT</span><i>✳</i><span>YOUR NEXT CHAPTER</span><i>✳</i></div></div>
+    <div class="ticker-shell" aria-hidden="true"><div class="ticker"><div class="ticker-track"><span>BIG QUESTIONS</span><i>✳</i><span>BOLDER IDEAS</span><i>✳</i><span>REAL-WORLD IMPACT</span><i>✳</i><span>YOUR NEXT CHAPTER</span><i>✳</i><span>BIG QUESTIONS</span><i>✳</i><span>BOLDER IDEAS</span><i>✳</i><span>REAL-WORLD IMPACT</span><i>✳</i><span>YOUR NEXT CHAPTER</span><i>✳</i></div></div></div>
     <section id="about" class="about section-wrap section-space">
       <div class="section-intro reveal"><span class="eyebrow">01 / THE BIG IDEA</span><h2>School is where you learn.<br><span class="text-purple">This is where you create.</span></h2><p>That problem you keep noticing? It could be the beginning of something brilliant. The MNIT × Codevidhya Ideathon helps you turn curiosity into a solution worth sharing.</p></div>
       <div class="about-grid">
@@ -56,6 +57,19 @@
       </div>
       <div class="reach reveal"><div class="reach-label">A little context.<br><strong>A growing community.</strong><small>Codevidhya’s reported reach</small></div><div><strong><span data-count="500">500</span>+</strong><span>Schools</span></div><div><strong><span data-count="10">10</span>+</strong><span>Locations</span></div><div><strong><span data-count="4000">4,000</span>+</strong><span>Students</span></div></div>
     </section>
+    <section class="idea-lab" aria-labelledby="lab-heading">
+      <div class="lab-aurora" aria-hidden="true"></div>
+      <div class="section-wrap lab-layout">
+        <div class="lab-copy reveal"><span class="eyebrow"><span class="live-spark"></span> THE POSSIBILITY PLAYGROUND</span><h2 id="lab-heading">One curious mind.<br><span>A thousand <br>possible futures.</span></h2><p>Every breakthrough starts with a question.<br>Pick a spark. See where your imagination goes.</p>
+          <div class="spark-tabs" role="tablist" aria-label="Explore an inspiration theme"><button id="spark-learning" role="tab" aria-selected="true" aria-controls="spark-panel" data-spark="0"><span>✧</span> Learning</button><button id="spark-planet" role="tab" aria-selected="false" aria-controls="spark-panel" tabindex="-1" data-spark="1"><span>◎</span> Planet</button><button id="spark-community" role="tab" aria-selected="false" aria-controls="spark-panel" tabindex="-1" data-spark="2"><span>⌘</span> Community</button></div>
+          <div class="spark-panel" id="spark-panel" role="tabpanel" aria-labelledby="spark-learning" tabindex="0"><span class="eyebrow">A QUESTION TO GET YOU STARTED</span><p id="spark-question">What if learning could adapt to every learner?</p><span id="spark-hint">Think about a moment when a classmate needed a different way to understand something.</span></div>
+          <small class="lab-disclaimer">Inspiration prompts · Official event challenge announced separately.</small>
+        </div>
+        <div class="lab-stage"><div class="stage-corners" aria-hidden="true"></div><div class="stage-topline" aria-hidden="true"><span>IDEA FIELD / <b id="field-id">001</b></span><span><i></i> EXPLORING</span></div><canvas id="idea-universe" aria-hidden="true"></canvas><div class="orb-fallback" aria-hidden="true">✳</div><div class="orb-label label-north" aria-hidden="true">imagine.</div><div class="orb-label label-south" aria-hidden="true">connect.</div><div class="orb-label label-east" aria-hidden="true">create.</div><div class="stage-instruction"><span>↔</span> Move your cursor to shape the field</div><span class="stage-mobile-instruction">Choose a spark. Explore a new possibility.</span></div>
+      </div>
+      <div class="lab-bottom section-wrap" aria-hidden="true"><span>CURIOSITY IS YOUR SUPERPOWER.</span><div></div><span>SCROLL TO TURN IT INTO SOMETHING ↘</span></div>
+    </section>
+    <section class="manifesto section-wrap" aria-labelledby="manifesto-heading"><span class="eyebrow">A SMALL REMINDER BEFORE YOU BEGIN</span><h2 id="manifesto-heading">The future doesn’t arrive fully formed. <span>It starts as a scribble. A question. A wild little idea.</span> Yours could be next.</h2><span class="manifesto-star" aria-hidden="true">✳</span></section>
     <section id="journey" class="journey section-space">
       <div class="section-wrap"><div class="split-heading reveal"><div><span class="eyebrow">02 / FROM “WHAT IF” TO “WHAT’S NEXT”</span><h2>Three rounds.<br>One big leap.</h2></div><p>Think a little differently. Shape your solution.<br>Then take the stage.<br><span class="muted">A proposed three-month journey, with support along the way.</span></p></div>
       <div class="rounds">
@@ -73,5 +87,6 @@
   <footer class="footer section-wrap"><div class="footer-top"><a href="#" class="brand"><span class="brand-symbol">i<span>✳</span></span><span>ideathon<span class="brand-year">2026</span></span></a><div class="partners"><span>AN INITIATIVE BY</span><strong>MNIT <i>×</i> Codevidhya</strong></div><a href="mailto:headoffice@codevidhya.com">Let’s talk <span>↗</span><small>headoffice@codevidhya.com</small></a></div><div class="footer-bottom"><span>© 2026 MNIT × Codevidhya Ideathon.</span><span>Made for minds that wonder. <i>✧</i></span><a href="#">Back to top ↑</a></div></footer>
   <dialog id="registration-dialog" aria-labelledby="dialog-title"><button class="dialog-close" aria-label="Close registration information">×</button><span class="dialog-spark" aria-hidden="true">✳</span><span class="eyebrow">YOUR NEXT CHAPTER</span><h2 id="dialog-title">Keep that<br>curiosity ready.</h2><p>Registration is coming soon. Get a team of 3–4 students together and speak to your school coordinator. The official application link and dates will appear here once announced.</p><a class="button button-purple" href="mailto:headoffice@codevidhya.com?subject=MNIT%20%C3%97%20Codevidhya%20Ideathon%202026%20%E2%80%94%20Participation%20enquiry">Contact the organizers <span>↗</span></a><small>No registration has been submitted.</small></dialog>
   <div class="pencil-cursor" aria-hidden="true"><svg width="32" height="38" viewBox="0 0 32 38"><g transform="rotate(32 16 19)"><rect x="12" y="3" width="9" height="23" rx="1" fill="#d5f477" stroke="#25251f" stroke-width="1.4"/><path d="M12 26 L16.5 35 L21 26" fill="#efcdaa" stroke="#25251f" stroke-width="1.4"/><path d="M15 32 L16.5 35 L18 32" fill="#25251f"/><path d="M15 6 V25" stroke="#91b749"/><rect x="12" y="2" width="9" height="5" rx="1" fill="#bba4ef" stroke="#25251f" stroke-width="1.4"/></g></svg></div>
+  <canvas id="spark-trail" aria-hidden="true"></canvas><button class="motion-toggle" type="button" role="switch" aria-checked="true" aria-label="Animated effects"><span class="motion-indicator"></span><span class="motion-label">Motion on</span></button>
 </body>
 </html>

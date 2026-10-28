@@ -2,6 +2,12 @@
 
 A responsive, buildless landing page. Original CSS notebook illustration, pointer-reactive depth, floating pencil, scroll reveals, animated counters, pencil cursor companion, accessible category tabs, mobile navigation, FAQs and registration information dialog. No runtime dependencies or package install required. Reduced-motion preferences are respected. Google Fonts have local system fallbacks.
 
+## Enhanced effects
+
+`dist/effects.css` and `dist/effects.js` add a pointer-responsive hero constellation, holographic orbit rings, a 3D particle playground with sphere/torus/helix morphs and three inspiration prompts, pencil spark trails, magnetic buttons, pointer-lit tilted round cards, scroll-illuminated typography, mentor orbit motion and video/CTA lighting. These are interactive visual effects, not a connected AI service. The playground runs in canvas with bounded particle counts and sparse linear mesh connections. Animation work stops outside relevant viewports and while the document is hidden. A persistent motion toggle and the operating system's reduced-motion preference control the experience. The native scroll behavior stays intact.
+
+See `IMAGE_PROMPTS.md` for matching image prompts, target filenames and intended placements. Generated images have not been added yet.
+
 ## Preview
 
 Run `npm run dev` in this directory, then open http://localhost:4173. Run `npm run check` to check the browser JavaScript syntax. Publishable files are in `dist/`.

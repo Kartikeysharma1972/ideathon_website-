@@ -108,7 +108,7 @@
     cursorQueued = false;
   };
   window.addEventListener('pointermove', event => {
-    if (!finePointer.matches || reducedMotion.matches || event.pointerType === 'touch') return;
+    if (!finePointer.matches || reducedMotion.matches || document.documentElement.classList.contains('motion-paused') || event.pointerType === 'touch') return;
     cursorX = event.clientX; cursorY = event.clientY;
     cursor.style.opacity = '1';
     if (!cursorQueued) { cursorQueued = true; requestAnimationFrame(paintCursor); }
@@ -122,7 +122,7 @@
   const art = document.querySelector('.hero-art');
   const notebook = document.querySelector('.notebook');
   art.addEventListener('pointermove', event => {
-    if (!finePointer.matches || reducedMotion.matches) return;
+    if (!finePointer.matches || reducedMotion.matches || document.documentElement.classList.contains('motion-paused')) return;
     const rect = art.getBoundingClientRect();
     const x = (event.clientX - rect.left) / rect.width - 0.5;
     const y = (event.clientY - rect.top) / rect.height - 0.5;

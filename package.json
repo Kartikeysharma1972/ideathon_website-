@@ -3,5 +3,5 @@
   "version": "1.0.0",
   "private": true,
   "description": "A playful, accessible landing page for MNIT × Codevidhya Ideathon 2026.",
-  "scripts": { "dev": "node server.mjs", "start": "node server.mjs", "check": "node --check dist/app.js" }
+  "scripts": { "dev": "node server.mjs", "start": "node server.mjs", "check": "node --check dist/app.js && node --check dist/effects.js" }
 }
