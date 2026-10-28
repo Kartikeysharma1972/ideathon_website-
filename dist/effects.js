@@ -8,7 +8,7 @@
   try { userPaused = localStorage.getItem('ideathon-motion') === 'paused'; } catch { /* Storage is optional. */ }
   let paused = userPaused || reduce.matches;
   let frame = 0, last = 0, time = 0, scrollDirty = true;
-  let heroVisible = true, labVisible = false;
+  let heroVisible = Boolean(document.querySelector('.hero')), labVisible = false;
   const pointer = { x: -1000, y: -1000 };
   const hero = document.querySelector('.hero');
   const art = document.querySelector('.hero-art');
@@ -17,7 +17,7 @@
   const heroCanvas = document.querySelector('.hero-constellation');
   const labCanvas = document.getElementById('idea-universe');
   const trailCanvas = document.getElementById('spark-trail');
-  const heroContext = heroCanvas.getContext('2d');
+  const heroContext = heroCanvas ? heroCanvas.getContext('2d') : null;
   const labContext = labCanvas.getContext('2d');
   const trailContext = trailCanvas.getContext('2d');
   const sizes = { hero: { w: 1, h: 1 }, lab: { w: 1, h: 1 }, trail: { w: 1, h: 1 } };
@@ -57,7 +57,7 @@
     context.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
   function resize() {
-    sizeCanvas(heroCanvas, heroContext, 'hero');
+    if (heroCanvas) sizeCanvas(heroCanvas, heroContext, 'hero');
     sizeCanvas(labCanvas, labContext, 'lab');
     sizeCanvas(trailCanvas, trailContext, 'trail');
     scrollDirty = true;
@@ -186,8 +186,10 @@
     const progress = Math.min(1, Math.max(0, (innerHeight * .9 - rect.top) / (innerHeight * .65)));
     words.forEach((word, i) => word.classList.toggle('lit', paused || progress * (words.length + 2) > i));
     if (!paused) {
-      hero.style.setProperty('--hero-shift', `${Math.min(scrollY * .08, 55)}px`);
-      hero.style.setProperty('--art-shift', `${-Math.min(scrollY * .06, 45)}px`);
+      if (hero) {
+        hero.style.setProperty('--hero-shift', `${Math.min(scrollY * .08, 55)}px`);
+        hero.style.setProperty('--art-shift', `${-Math.min(scrollY * .06, 45)}px`);
+      }
       manifesto.style.setProperty('--star-turn', `${progress * 180}deg`);
       document.querySelector('.mentors').style.setProperty('--orbit-turn', `${scrollY * .045}deg`);
     }
@@ -220,7 +222,8 @@
       trail.length = 0; drawTrail(1);
       document.querySelectorAll('.button').forEach(button => { button.style.removeProperty('--magnet-x'); button.style.removeProperty('--magnet-y'); });
       document.querySelectorAll('.round-card').forEach(card => { card.style.removeProperty('--tilt-x'); card.style.removeProperty('--tilt-y'); });
-      document.querySelector('[data-hero-object]').style.transform = '';
+      const heroObject = document.querySelector('[data-hero-object]');
+      if (heroObject) heroObject.style.transform = '';
       drawHero(); drawLab(1);
     }
     scrollDirty = true; schedule();
@@ -240,7 +243,8 @@
       entries.forEach(entry => { if (entry.target === hero) heroVisible = entry.isIntersecting; if (entry.target === lab) labVisible = entry.isIntersecting; });
       last = 0; schedule();
     }, { rootMargin: '100px' });
-    visibility.observe(hero); visibility.observe(lab);
+    if (hero) visibility.observe(hero);
+    visibility.observe(lab);
   } else { labVisible = true; }
   window.addEventListener('scroll', () => { scrollDirty = true; schedule(); }, { passive: true });
   let resizeTimer;
@@ -250,7 +254,7 @@
     if (paused || !fine.matches || event.pointerType === 'touch') return;
     pointer.x = event.clientX; pointer.y = event.clientY;
     if (Math.hypot(pointer.x - previousPoint.x, pointer.y - previousPoint.y) > 7) {
-      if (trail.length < 30) trail.push({ x: pointer.x + 11, y: pointer.y + 21, vx: (Math.random() - .5) * .5, vy: -.35 - Math.random() * .4, life: 1, radius: 2 + Math.random() * 2, lime: Math.random() > .65 });
+      if (trail.length < 30) trail.push({ x: pointer.x, y: pointer.y, vx: (Math.random() - .5) * .5, vy: -.35 - Math.random() * .4, life: 1, radius: 2 + Math.random() * 2, lime: Math.random() > .65 });
       previousPoint = { x: pointer.x, y: pointer.y };
     }
     schedule();

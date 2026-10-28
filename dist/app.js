@@ -102,31 +102,52 @@
 
   const cursor = document.querySelector('.pencil-cursor');
   const finePointer = window.matchMedia('(pointer: fine) and (min-width: 701px)');
+  // The pencil replaces the system cursor: its graphite tip sits on the hotspot (3px, 37px into the SVG).
+  const interactive = 'a, button, summary, label, [role="tab"], [role="switch"], input, select, textarea';
   let cursorX = 0, cursorY = 0, cursorQueued = false;
   const paintCursor = () => {
-    cursor.style.transform = `translate3d(${cursorX + 12}px, ${cursorY + 8}px, 0)`;
+    cursor.style.transform = `translate3d(${cursorX - 3}px, ${cursorY - 37}px, 0)`;
     cursorQueued = false;
   };
+  const hidePencil = () => { cursor.style.opacity = '0'; };
   window.addEventListener('pointermove', event => {
-    if (!finePointer.matches || reducedMotion.matches || document.documentElement.classList.contains('motion-paused') || event.pointerType === 'touch') return;
+    if (!finePointer.matches || event.pointerType !== 'mouse') {
+      document.documentElement.classList.remove('pencil-on');
+      hidePencil();
+      return;
+    }
+    document.documentElement.classList.add('pencil-on');
     cursorX = event.clientX; cursorY = event.clientY;
     cursor.style.opacity = '1';
+    cursor.classList.toggle('is-hover', Boolean(event.target.closest && event.target.closest(interactive)));
     if (!cursorQueued) { cursorQueued = true; requestAnimationFrame(paintCursor); }
   }, { passive: true });
-  document.addEventListener('pointerleave', () => { cursor.style.opacity = '0'; });
-  window.addEventListener('blur', () => { cursor.style.opacity = '0'; });
+  window.addEventListener('pointerdown', event => {
+    if (event.pointerType !== 'mouse' || !document.documentElement.classList.contains('pencil-on')) return;
+    cursor.classList.add('is-down');
+    if (reducedMotion.matches) return;
+    const dot = document.createElement('span');
+    dot.className = 'pencil-dot';
+    dot.setAttribute('aria-hidden', 'true');
+    dot.style.setProperty('--at', `translate(${event.clientX}px, ${event.clientY}px)`);
+    dot.addEventListener('animationend', () => dot.remove());
+    document.body.appendChild(dot);
+  }, { passive: true });
+  window.addEventListener('pointerup', () => cursor.classList.remove('is-down'), { passive: true });
+  document.addEventListener('mouseout', event => { if (!event.relatedTarget) hidePencil(); });
+  window.addEventListener('blur', hidePencil);
   reducedMotion.addEventListener('change', () => {
-    if (reducedMotion.matches) { document.documentElement.classList.remove('motion-ready'); cursor.style.opacity = '0'; }
+    if (reducedMotion.matches) document.documentElement.classList.remove('motion-ready');
   });
 
   const art = document.querySelector('.hero-art');
   const heroObject = document.querySelector('[data-hero-object]');
-  art.addEventListener('pointermove', event => {
+  if (art && heroObject) art.addEventListener('pointermove', event => {
     if (!finePointer.matches || reducedMotion.matches || document.documentElement.classList.contains('motion-paused')) return;
     const rect = art.getBoundingClientRect();
     const x = (event.clientX - rect.left) / rect.width - 0.5;
     const y = (event.clientY - rect.top) / rect.height - 0.5;
     heroObject.style.transform = `rotateY(${x * 13}deg) rotateX(${-y * 10}deg)`;
   }, { passive: true });
-  art.addEventListener('pointerleave', () => { heroObject.style.transform = ''; });
+  if (art && heroObject) art.addEventListener('pointerleave', () => { heroObject.style.transform = ''; });
 })();
