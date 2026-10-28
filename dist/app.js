@@ -1,6 +1,5 @@
 (() => {
   'use strict';
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const progress = document.querySelector('.scroll-progress');
   let scheduled = false;
   const updateProgress = () => {
@@ -14,7 +13,7 @@
   window.addEventListener('resize', updateProgress);
   updateProgress();
 
-  if ('IntersectionObserver' in window && !reducedMotion.matches) {
+  if ('IntersectionObserver' in window) {
     document.documentElement.classList.add('motion-ready');
     const observer = new IntersectionObserver(entries => {
       entries.forEach(entry => {
@@ -125,7 +124,6 @@
   window.addEventListener('pointerdown', event => {
     if (event.pointerType !== 'mouse' || !document.documentElement.classList.contains('pencil-on')) return;
     cursor.classList.add('is-down');
-    if (reducedMotion.matches) return;
     const dot = document.createElement('span');
     dot.className = 'pencil-dot';
     dot.setAttribute('aria-hidden', 'true');
@@ -136,14 +134,11 @@
   window.addEventListener('pointerup', () => cursor.classList.remove('is-down'), { passive: true });
   document.addEventListener('mouseout', event => { if (!event.relatedTarget) hidePencil(); });
   window.addEventListener('blur', hidePencil);
-  reducedMotion.addEventListener('change', () => {
-    if (reducedMotion.matches) document.documentElement.classList.remove('motion-ready');
-  });
 
   const art = document.querySelector('.hero-art');
   const heroObject = document.querySelector('[data-hero-object]');
   if (art && heroObject) art.addEventListener('pointermove', event => {
-    if (!finePointer.matches || reducedMotion.matches || document.documentElement.classList.contains('motion-paused')) return;
+    if (!finePointer.matches) return;
     const rect = art.getBoundingClientRect();
     const x = (event.clientX - rect.left) / rect.width - 0.5;
     const y = (event.clientY - rect.top) / rect.height - 0.5;

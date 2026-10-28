@@ -1,12 +1,10 @@
 (() => {
   'use strict';
   const root = document.documentElement;
-  const reduce = matchMedia('(prefers-reduced-motion: reduce)');
   const fine = matchMedia('(pointer: fine) and (min-width: 701px)');
-  const motionButton = document.querySelector('.motion-toggle');
-  let userPaused = false;
-  try { userPaused = localStorage.getItem('ideathon-motion') === 'paused'; } catch { /* Storage is optional. */ }
-  let paused = userPaused || reduce.matches;
+  // Motion is always on for this site.
+  const paused = false;
+  try { localStorage.removeItem('ideathon-motion'); } catch { /* Storage is optional. */ }
   let frame = 0, last = 0, time = 0, scrollDirty = true;
   let heroVisible = Boolean(document.querySelector('.hero')), labVisible = false;
   const pointer = { x: -1000, y: -1000 };
@@ -212,28 +210,9 @@
   }
   function schedule() { if (!frame && !document.hidden) frame = requestAnimationFrame(tick); }
   function setMotion() {
-    paused = userPaused || reduce.matches;
-    root.classList.toggle('motion-paused', paused);
-    motionButton.setAttribute('aria-checked', String(!paused));
-    motionButton.querySelector('.motion-label').textContent = paused ? 'Motion off' : 'Motion on';
-    motionButton.title = reduce.matches ? 'Your device prefers reduced motion' : paused ? 'Resume animated effects' : 'Pause animated effects';
-    motionButton.disabled = reduce.matches;
-    if (paused) {
-      trail.length = 0; drawTrail(1);
-      document.querySelectorAll('.button').forEach(button => { button.style.removeProperty('--magnet-x'); button.style.removeProperty('--magnet-y'); });
-      document.querySelectorAll('.round-card').forEach(card => { card.style.removeProperty('--tilt-x'); card.style.removeProperty('--tilt-y'); });
-      const heroObject = document.querySelector('[data-hero-object]');
-      if (heroObject) heroObject.style.transform = '';
-      drawHero(); drawLab(1);
-    }
+    root.classList.remove('motion-paused');
     scrollDirty = true; schedule();
   }
-  motionButton.addEventListener('click', () => {
-    userPaused = !userPaused;
-    try { localStorage.setItem('ideathon-motion', userPaused ? 'paused' : 'on'); } catch { /* Optional preference persistence. */ }
-    setMotion();
-  });
-  reduce.addEventListener('change', setMotion);
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) { cancelAnimationFrame(frame); frame = 0; last = 0; }
     else { scrollDirty = true; schedule(); }

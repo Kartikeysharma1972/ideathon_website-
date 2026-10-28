@@ -1,4 +1,4 @@
-# MNIT × Codevidhya Ideathon 2026
+# MIIC × Codevidhya Ideathon 2026
 
 A responsive, buildless landing page. A scroll-driven 3D classroom opens the page, a pencil replaces the mouse cursor, plus scroll reveals, animated counters, accessible category tabs, mobile navigation, FAQs and registration information dialog. No runtime dependencies or package install required. Reduced-motion preferences are respected. Google Fonts have local system fallbacks.
 
@@ -6,7 +6,11 @@ A responsive, buildless landing page. A scroll-driven 3D classroom opens the pag
 
 `dist/classroom.js` (Three.js 0.160 from jsDelivr via an import map, no build step) renders a stylised Indian classroom inside a pinned `#classroom` section that is 820vh tall. As you scroll, the camera walks one path through seven chapters: the door, the back bench, the rows (an idea bulb pops over a student), the blackboard (the three rounds are chalk-written onto it), the mentor at a student's desk, the student's notebook (the starter-kit ticks draw in) and finally the view from the board with every hand raised. All motion is keyed to a single eased "story clock" from scroll position, with holds at each chapter. The HTML chapter cards in `#classroom` are the real content; the canvas is decorative.
 
-To retune a camera shot, edit `SHOTS` (and `PORTRAIT` for phones) in `classroom.js`; the teacher's path is `TK`. Board text lives in `scenes`. If WebGL or the CDN is unavailable the chapters fall back to stacked cards (`cr-fallback`). With reduced motion or motion toggled off, the camera cuts between chapters instead of travelling.
+To retune a camera shot, edit `SHOTS` (and `PORTRAIT` for phones) in `classroom.js`; the teacher's path is `TK`. Board text lives in `scenes`. If WebGL or the CDN is unavailable the chapters fall back to stacked cards (`cr-fallback`).
+
+The students and teacher are CC0 rigged characters by Quaternius (via poly.pizza), stored in `dist/assets/models/` and recoloured as school uniforms in code. Students are posed seated with a small bone-aiming solver (`aim`/`turn` in `classroom.js`); the teacher uses the models' own Idle/Walk/Wave clips plus posed arms for writing, pointing and helping. Lighting is physically based: an environment map for bounce light and a shadow-casting sun that only enters through the window openings. Add `?snap` to the URL to skip camera easing (handy for screenshots).
+
+Motion is always on: there is no motion toggle, and reduced-motion preferences do not change the experience.
 
 The pencil cursor (fine pointers only) hides the system cursor; its graphite tip is the hotspot. It tilts over interactive elements and leaves a small ring on click. It steps aside while the registration dialog is open.
 

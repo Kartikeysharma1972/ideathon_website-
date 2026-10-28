@@ -77,7 +77,7 @@
   .cr-pending .cr-panel.is-past,.cr-live .cr-panel.is-past{transform:translateY(-20px) scale(.98)}
   .cr-pending .cr-panel.is-active,.cr-live .cr-panel.is-active{transform:none}
   .cr-pending .cr-panel--hero,.cr-live .cr-panel--hero{top:96px;bottom:auto;padding:0}
-  .classroom[data-chapter="0"] .cr-shade{background:linear-gradient(180deg,#f7f6eef7 0%,#f7f6eeeb 52%,#f7f6ee00 78%)}
+  .classroom[data-chapter="0"] .cr-shade{background:linear-gradient(180deg,#f7f6eef7 0%,#f7f6eee0 50%,#f7f6ee00 66%)}
   .cr-panel h1{font-size:clamp(46px,13vw,64px);letter-spacing:-3px;margin:18px 0 18px}
   .cr-panel .hero-description{font-size:14px}
   .cr-panel h2{font-size:26px;letter-spacing:-1px;margin:10px 0 10px}
@@ -93,7 +93,6 @@
 /* Pencil as the real cursor (fine pointers only) */
 html.pencil-on:not(:has(dialog[open])),html.pencil-on:not(:has(dialog[open])) *{cursor:none!important}
 .pencil-cursor{display:block;width:40px;height:40px;will-change:transform}
-.motion-paused .pencil-cursor{display:block}
 html:has(dialog[open]) .pencil-cursor{opacity:0!important}
 .pencil-cursor svg{transform-origin:3px 37px;transition:transform .18s cubic-bezier(.3,.7,.3,1.4)}
 .pencil-cursor.is-hover svg{transform:rotate(-14deg) scale(1.1)}
@@ -102,7 +101,3 @@ html:has(dialog[open]) .pencil-cursor{opacity:0!important}
 @keyframes pencil-dot{from{transform:var(--at) scale(.2);opacity:.9}to{transform:var(--at) scale(1.3);opacity:0}}
 @media (max-width:700px),(pointer:coarse){.pencil-cursor{display:none}}
 
-@media (prefers-reduced-motion:reduce){
-  .cr-pending .cr-panel,.cr-live .cr-panel{transition:opacity .2s ease;filter:none}
-  .cr-loader i{animation:none}
-}

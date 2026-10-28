@@ -2,7 +2,10 @@
 // (door → back bench → rows → blackboard → mentor desk → notebook → hands up)
 // and every animation is keyed to one continuous "story clock" derived from scroll.
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 const root = document.documentElement;
 const section = document.getElementById('classroom');
@@ -10,11 +13,10 @@ const canvas = section.querySelector('.cr-canvas');
 const panels = [...section.querySelectorAll('.cr-panel')];
 const railLinks = [...section.querySelectorAll('.cr-rail a')];
 const chapterLabel = section.querySelector('.cr-chapter-label');
-const chapterBar = section.querySelector('.cr-chapter-bar i');
-const reduce = matchMedia('(prefers-reduced-motion: reduce)');
 const finePointer = matchMedia('(pointer: fine)');
 const LAST = panels.length - 1;
 const HOLD = 0.2;
+const SNAP = new URLSearchParams(location.search).has('snap'); // screenshot/debug: no camera easing
 
 const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 const smooth = t => t * t * (3 - 2 * t);
@@ -38,18 +40,28 @@ function fail() {
   root.classList.add('cr-fallback');
 }
 
+// CC0 characters by Quaternius (poly.pizza), recoloured and posed in code
+const MODEL_FILES = { boy: 'student-boy', boySweater: 'student-boy-sweater', girl: 'student-girl', teacher: 'teacher' };
+
 let renderer;
 try {
   renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-} catch {
+  const loader = new GLTFLoader();
+  const entries = await Promise.all(Object.entries(MODEL_FILES).map(async ([key, file]) => [key, await loader.loadAsync(`assets/models/${file}.glb`)]));
+  build(Object.fromEntries(entries));
+} catch (error) {
+  console.error(error);
   fail();
 }
-if (renderer) build();
 
-function build() {
+function build(models) {
   const isSmall = () => innerWidth < 760;
   renderer.setPixelRatio(Math.min(devicePixelRatio || 1, isSmall() ? 1.5 : 1.75));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   const scene = new THREE.Scene();
   const C = {
@@ -62,21 +74,28 @@ function build() {
 
   const camera = new THREE.PerspectiveCamera(42, 1, 0.05, 60);
 
-  scene.add(new THREE.HemisphereLight('#fff9ec', '#b9a58e', 1.55));
-  const sun = new THREE.DirectionalLight('#fff1d6', 1.5);
-  sun.position.set(-9, 8, 2);
-  scene.add(sun);
-  const fill = new THREE.DirectionalLight('#e6ddff', 0.45);
-  fill.position.set(6, 4, -6);
+  // soft room bounce from an environment map, warm sun through the windows with real shadows
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  scene.add(new THREE.HemisphereLight('#fff6e6', '#c9b49a', 1.25));
+  const sunDir = new THREE.Vector3(1, -0.92, 0.26).normalize();
+  const sun = new THREE.DirectionalLight('#ffe2b8', 3.4);
+  sun.position.copy(sunDir).multiplyScalar(-16);
+  sun.castShadow = true;
+  sun.shadow.mapSize.setScalar(innerWidth < 760 ? 1024 : 2048);
+  Object.assign(sun.shadow.camera, { left: -11, right: 11, top: 11, bottom: -11, near: 2, far: 34 });
+  sun.shadow.bias = -0.0004;
+  sun.shadow.normalBias = 0.025;
+  scene.add(sun, sun.target);
+  const fill = new THREE.DirectionalLight('#e8e4ff', 0.55);
+  fill.position.set(6, 5, -5);
   scene.add(fill);
 
   // ---------- materials ----------
-  const ramp3 = new THREE.DataTexture(new Uint8Array([140, 140, 140, 255, 200, 200, 200, 255, 255, 255, 255, 255]), 3, 1, THREE.RGBAFormat);
-  ramp3.minFilter = ramp3.magFilter = THREE.NearestFilter;
-  ramp3.needsUpdate = true;
   const materials = new Map();
+  const surface = extra => new THREE.MeshStandardMaterial({ roughness: 0.78, metalness: 0, envMapIntensity: 0.55, ...extra });
   const mat = color => {
-    if (!materials.has(color)) materials.set(color, new THREE.MeshToonMaterial({ color, gradientMap: ramp3 }));
+    if (!materials.has(color)) materials.set(color, surface({ color }));
     return materials.get(color);
   };
   const basic = (color, extra = {}) => new THREE.MeshBasicMaterial({ color, ...extra });
@@ -106,6 +125,8 @@ function build() {
     buckets.forEach((list, material) => {
       const mesh = new THREE.Mesh(mergeGeometries(list, false), material);
       mesh.matrixAutoUpdate = false;
+      mesh.castShadow = material !== blobM;
+      mesh.receiveShadow = true;
       scene.add(mesh);
     });
     buckets.clear();
@@ -128,15 +149,20 @@ function build() {
   });
   floorTex.wrapS = floorTex.wrapT = THREE.RepeatWrapping;
   floorTex.repeat.set(3, 3.5);
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(W * 2, D * 2), new THREE.MeshToonMaterial({ map: floorTex, gradientMap: ramp3 }));
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(W * 2, D * 2), surface({ map: floorTex, roughness: 0.55 }));
   floor.rotation.x = -Math.PI / 2;
+  floor.receiveShadow = true;
   scene.add(floor);
 
   const wallM = mat(C.wall), dadoM = mat(C.dado), skirtM = mat(C.skirting);
-  box(basic('#efe8d8'), W * 2, 0.1, D * 2, 0, H + 0.05, 0);
+  box(basic('#ebe4d4'), W * 2, 0.1, D * 2, 0, H + 0.05, 0);
   // walls: upper paint + lilac dado + purple trim line
   [[0, -D - 0.05, W * 2, 0], [0, D + 0.05, W * 2, 0], [-W - 0.05, 0, D * 2, Math.PI / 2], [W + 0.05, 0, D * 2, Math.PI / 2]].forEach(([x, z, len, ry]) => {
-    box(wallM, len, H - 1.1, 0.1, x, 1.1 + (H - 1.1) / 2, z, ry);
+    if (x < 0) {
+      box(wallM, len, 0.17, 0.1, x, 1.185, z, ry);
+      box(wallM, len, H - 3.03, 0.1, x, 3.03 + (H - 3.03) / 2, z, ry);
+      [[-D, -4.35], [-2.45, -0.85], [1.05, 2.65], [4.55, D]].forEach(([a, b]) => box(wallM, b - a, 1.76, 0.1, x, 2.15, (a + b) / 2, ry));
+    } else box(wallM, len, H - 1.1, 0.1, x, 1.1 + (H - 1.1) / 2, z, ry);
     box(dadoM, len, 1.1, 0.1, x, 0.55, z, ry);
     const ix = x === 0 ? 0 : Math.sign(x) * -0.04, iz = z === 0 || x !== 0 ? 0 : Math.sign(z) * -0.04;
     box(skirtM, len, 0.05, 0.04, x + ix, 1.12, z + iz, ry);
@@ -160,7 +186,7 @@ function build() {
     g.fillStyle = 'rgba(255,255,255,.85)';
     [[60, 60, 26], [86, 54, 30], [112, 64, 22], [190, 40, 18], [208, 36, 22]].forEach(([x, y, r]) => { g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); });
   });
-  const skyM = basic('#ffffff', { map: skyTex });
+  const skyM = basic('#ffffff', { map: skyTex, toneMapped: false });
   const windowZ = [-3.4, 0.1, 3.6];
   const frameM = mat('#f6f1e4'), grillM = mat('#5b5c52');
   windowZ.forEach(z => {
@@ -181,7 +207,6 @@ function build() {
     vertexShader: 'attribute float aFade; varying float vFade; void main(){ vFade = aFade; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
     fragmentShader: 'uniform float uStrength; varying float vFade; void main(){ gl_FragColor = vec4(vec3(1.0,0.93,0.74) * vFade * uStrength, 1.0); }'
   });
-  const sunDir = new THREE.Vector3(1, -1.05, 0.28);
   const shaftGeos = [];
   windowZ.forEach(z => {
     const corners = [[1.32, z - 0.88], [2.98, z - 0.88], [2.98, z + 0.88], [1.32, z + 0.88]].map(([y, zz]) => new THREE.Vector3(-W + 0.05, y, zz));
@@ -195,32 +220,15 @@ function build() {
     g.setAttribute('aFade', new THREE.Float32BufferAttribute(fade, 1));
     g.setIndex(idx);
     shaftGeos.push(g);
-    // sunlit patch on the floor
-    const patch = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 1.0), sunPatchMat());
-    const a = floorPts[0], b = floorPts[2];
-    patch.position.set((a.x + b.x) / 2, 0.012, (a.z + b.z) / 2);
-    patch.scale.set(Math.abs(b.x - a.x) + 0.3, Math.abs(b.z - a.z) + 0.2, 1);
-    patch.rotation.x = -Math.PI / 2;
-    scene.add(patch);
   });
   scene.add(new THREE.Mesh(mergeGeometries(shaftGeos), shaftMat));
-  function sunPatchMat() {
-    if (sunPatchMat.m) return sunPatchMat.m;
-    const t = canvasTexture(128, 128, (g, w, h) => {
-      const grd = g.createRadialGradient(w / 2, h / 2, 10, w / 2, h / 2, w / 2);
-      grd.addColorStop(0, 'rgba(255,240,200,.55)'); grd.addColorStop(1, 'rgba(255,240,200,0)');
-      g.fillStyle = grd; g.fillRect(0, 0, w, h);
-    });
-    return (sunPatchMat.m = new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
-  }
-
   // soft contact shadows
   const blobTex = canvasTexture(128, 128, (g, w, h) => {
     const grd = g.createRadialGradient(w / 2, h / 2, 6, w / 2, h / 2, w / 2);
     grd.addColorStop(0, 'rgba(60,40,25,.55)'); grd.addColorStop(1, 'rgba(60,40,25,0)');
     g.fillStyle = grd; g.fillRect(0, 0, w, h);
   });
-  const blobM = new THREE.MeshBasicMaterial({ map: blobTex, transparent: true, depthWrite: false, opacity: 0.55 });
+  const blobM = new THREE.MeshBasicMaterial({ map: blobTex, transparent: true, depthWrite: false, opacity: 0.3 });
   const blob = (x, z, sx, sz, y = 0.01) => addStatic(new THREE.PlaneGeometry(sx, sz), blobM, x, y, z, -Math.PI / 2);
 
   // ---------- blackboard ----------
@@ -231,7 +239,8 @@ function build() {
   const boardTex = new THREE.CanvasTexture(boardCanvas);
   boardTex.colorSpace = THREE.SRGBColorSpace;
   boardTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
-  const boardMesh = new THREE.Mesh(new THREE.PlaneGeometry(BOARD.w, BOARD.h), new THREE.MeshBasicMaterial({ map: boardTex, color: '#e9e9e2' }));
+  const boardMesh = new THREE.Mesh(new THREE.PlaneGeometry(BOARD.w, BOARD.h), surface({ map: boardTex, roughness: 0.92, envMapIntensity: 0.2 }));
+  boardMesh.receiveShadow = true;
   boardMesh.position.set(BOARD.x, BOARD.y, -D + 0.04);
   scene.add(boardMesh);
   const frame = mat(C.frame);
@@ -256,7 +265,7 @@ function build() {
   const signTex = canvasTexture(1024, 128, (g, w, h) => {
     g.fillStyle = '#25251f'; g.fillRect(0, 0, w, h);
     g.fillStyle = '#dcf68d'; g.font = '700 58px "Space Grotesk", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.fillText('MNIT × CODEVIDHYA · IDEATHON 2026', w / 2, h / 2 + 3);
+    g.fillText('MIIC × CODEVIDHYA · IDEATHON 2026', w / 2, h / 2 + 3);
   });
   const sign = new THREE.Mesh(new THREE.PlaneGeometry(2.8, 0.35), basic('#ffffff', { map: signTex }));
   sign.position.set(BOARD.x, 3.98, -D + 0.06);
@@ -265,7 +274,8 @@ function build() {
   // ---------- posters & noticeboards ----------
   function poster(w, h, px, draw, x, y, z, ry) {
     const t = canvasTexture(px, Math.round(px * h / w), draw);
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshToonMaterial({ map: t, gradientMap: ramp3 }));
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), surface({ map: t, roughness: 0.9 }));
+    m.receiveShadow = true;
     m.position.set(x, y, z); m.rotation.y = ry;
     scene.add(m);
     return m;
@@ -386,7 +396,8 @@ function build() {
     g.fillStyle = '#9ccc65';
     [[40, 40, 30, 22], [70, 80, 18, 26], [140, 46, 40, 20], [150, 86, 20, 18], [210, 90, 22, 12], [190, 36, 18, 14]].forEach(([x, y, a, b]) => { g.beginPath(); g.ellipse(x, y, a, b, 0, 0, 7); g.fill(); });
   });
-  const globe = new THREE.Mesh(new THREE.SphereGeometry(0.15, 24, 18), new THREE.MeshToonMaterial({ map: globeTex, gradientMap: ramp3 }));
+  const globe = new THREE.Mesh(new THREE.SphereGeometry(0.15, 32, 24), surface({ map: globeTex, roughness: 0.35 }));
+  globe.castShadow = true;
   globe.position.set(TD.x + 0.5, 1.25, TD.z - 0.05);
   globe.rotation.z = 0.4;
   scene.add(globe);
@@ -440,52 +451,82 @@ function build() {
     if (n && rand() > .4) box(mat(pick(['#7850ce', '#e46f53', '#6fb6e9'])), 0.18, 0.035, 0.06, cx + (rand() - .5), 0.785, z - 0.15, (rand() - .5));
   }));
 
-  // ---------- characters ----------
-  const SKIN = ['#c98e66', '#b67a55', '#d9a27c', '#a86d4b', '#e0b08a', '#c4875f'];
-  const HAIR = ['#2a1d17', '#3b2a20', '#1e1a18', '#4a3226'];
-  const SHIRT = ['#f6f5ef', '#d6e5f6', '#f6f5ef', '#d6e5f6', '#ece4ff'];
-  const TIE = ['#7850ce', '#2f3a6b', '#8d2f3c'];
-  const eyeM = mat('#1d1b18'), cheekM = mat('#ea8f86');
-  const geo = {
-    torso: new THREE.CapsuleGeometry(0.15, 0.22, 4, 12),
-    head: new THREE.SphereGeometry(0.15, 22, 16),
-    hair: new THREE.SphereGeometry(0.162, 22, 14, 0, Math.PI * 2, 0, 1.75),
-    eye: new THREE.SphereGeometry(0.019, 8, 6),
-    cheek: new THREE.SphereGeometry(0.026, 8, 6),
-    arm: new THREE.CapsuleGeometry(0.048, 0.22, 4, 8),
-    hand: new THREE.SphereGeometry(0.052, 10, 8),
-    tie: new THREE.BoxGeometry(0.05, 0.18, 0.02),
-    braid: new THREE.CapsuleGeometry(0.04, 0.18, 4, 8),
-    bun: new THREE.SphereGeometry(0.075, 12, 10)
-  };
+  // ---------- characters: rigged humans posed in code ----------
+  const SKIN = ['#b07a52', '#9a653f', '#c08a60', '#8a5a3a', '#c99a70', '#a46e48'];
+  const HAIR = ['#17110d', '#21160f', '#100c0a', '#2b1c14'];
+  const shade = (hex, k) => '#' + new THREE.Color(hex).multiplyScalar(k).getHexString();
+  const V = (x, y, z) => new THREE.Vector3(x, y, z).normalize();
+  const UP = new THREE.Vector3(0, 1, 0), RIGHT = new THREE.Vector3(1, 0, 0), IDQ = new THREE.Quaternion();
+  const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _dir = new THREE.Vector3();
+  const _q = new THREE.Quaternion(), _q2 = new THREE.Quaternion(), _wq = new THREE.Quaternion(), _pq = new THREE.Quaternion(), _hq = new THREE.Quaternion();
 
-  function makeArm(color, skin, len = 0.22) {
-    const pivot = new THREE.Group();
-    const arm = new THREE.Mesh(len === 0.22 ? geo.arm : new THREE.CapsuleGeometry(0.05, len, 4, 8), mat(color));
-    arm.position.y = -(len / 2 + 0.04);
-    const handM = new THREE.Mesh(geo.hand, mat(skin));
-    handM.position.y = -(len + 0.1);
-    pivot.add(arm, handM);
-    return pivot;
+  // the low-poly sources are flat shaded; welding vertices rounds the bodies (heads keep crisp hair)
+  Object.values(models).forEach(gltf => gltf.scene.traverse(o => {
+    if (!o.isSkinnedMesh || /head/i.test(o.name) || /head/i.test(o.parent?.name || '')) return;
+    const g = o.geometry.clone();
+    g.deleteAttribute('normal');
+    o.geometry = mergeVertices(g, 1e-4);
+    o.geometry.computeVertexNormals();
+  }));
+
+  function setWorldRotation(bone, q) {
+    bone.getWorldQuaternion(_wq);
+    bone.parent.getWorldQuaternion(_pq);
+    bone.quaternion.copy(_pq.invert().multiply(q.multiply(_wq)));
+    bone.updateMatrixWorld(true);
   }
-  function makeFace(head, skin, hairColor, girl) {
-    const headMesh = new THREE.Mesh(geo.head, mat(skin));
-    const hair = new THREE.Mesh(geo.hair, mat(hairColor));
-    hair.rotation.x = 0.42; hair.position.set(0, 0.012, 0.008);
-    head.add(headMesh, hair);
-    [-1, 1].forEach(s => {
-      const eye = new THREE.Mesh(geo.eye, eyeM); eye.position.set(s * 0.055, 0.02, -0.138); head.add(eye);
-      const cheek = new THREE.Mesh(geo.cheek, cheekM); cheek.position.set(s * 0.088, -0.035, -0.118); cheek.scale.set(1, 0.6, 0.5); head.add(cheek);
+  // swing `bone` so it points at `dir` (character space: -z forward, +y up)
+  function aim(holder, bone, child, dir, weight = 1) {
+    bone.getWorldPosition(_a);
+    child.getWorldPosition(_b);
+    _b.sub(_a).normalize();
+    holder.getWorldQuaternion(_hq);
+    _dir.copy(dir).applyQuaternion(_hq);
+    _q2.setFromUnitVectors(_b, _dir);
+    _q.slerpQuaternions(IDQ, _q2, weight);
+    setWorldRotation(bone, _q);
+  }
+  // rotate `bone` about an axis given in character space
+  function turn(holder, bone, axis, angle) {
+    holder.getWorldQuaternion(_hq);
+    _q.setFromAxisAngle(_dir.copy(axis).applyQuaternion(_hq), angle);
+    setWorldRotation(bone, _q);
+  }
+  const blendDir = (out, a, b, t) => out.copy(a).lerp(b, t).normalize();
+
+  const dressed = new Map();
+  function makeCharacter(gltf, palette, height) {
+    const model = cloneSkinned(gltf.scene);
+    model.traverse(o => {
+      if (!o.isMesh) return;
+      o.castShadow = o.receiveShadow = true;
+      o.frustumCulled = false;
+      const color = palette[o.material.name];
+      const key = o.material.uuid + (color || '');
+      if (!dressed.has(key)) {
+        const m = o.material.clone();
+        if (color) m.color.set(color);
+        Object.assign(m, { roughness: 0.72, metalness: 0, envMapIntensity: 0.6, flatShading: false });
+        dressed.set(key, m);
+      }
+      o.material = dressed.get(key);
     });
-    if (girl) {
-      [-1, 1].forEach(s => {
-        const braid = new THREE.Mesh(geo.braid, mat(hairColor));
-        braid.position.set(s * 0.11, -0.13, 0.08); braid.rotation.z = s * 0.15;
-        head.add(braid);
-        const ribbon = new THREE.Mesh(geo.cheek, mat(C.purple)); ribbon.position.set(s * 0.12, -0.25, 0.085); head.add(ribbon);
-      });
-    }
+    model.rotation.y = Math.PI; // the sources face +z; our characters face the board (-z)
+    model.scale.setScalar(height / 1.82);
+    const holder = new THREE.Group();
+    holder.add(model);
+    holder.updateMatrixWorld(true);
+    const bones = {};
+    model.traverse(o => { if (o.isBone) bones[o.name] = o; });
+    const side = {};
+    ['L', 'R'].forEach(sd => { side[sd] = Math.sign(holder.worldToLocal(bones[`UpperArm${sd}`].getWorldPosition(new THREE.Vector3())).x) || 1; });
+    return { holder, model, bones, side };
   }
+
+  // seated pose targets
+  const LEG_UP = s => V(s * 0.12, -0.08, -1), LEG_DOWN = V(0, -1, -0.04);
+  const ARM_REST = s => V(s * 0.2, -0.8, -0.56), FORE_REST = s => V(-s * 0.45, -0.06, -0.89);
+  const ARM_UP = s => V(s * 0.22, 1, -0.05), FORE_UP = s => V(s * 0.06, 1, -0.03);
 
   const kids = [];
   const seatFor = (cx, z, side) => ({ x: cx + side * 0.38, z: z + 0.48 });
@@ -495,65 +536,92 @@ function build() {
   const EAGER = [seatFor(COLS[1], ROWS[0], 1), seatFor(COLS[2], ROWS[0], 1), seatFor(COLS[0], ROWS[1], 1)];
   const same = (a, b) => Math.abs(a.x - b.x) < 0.01 && Math.abs(a.z - b.z) < 0.01;
   const reserved = [HERO, BULB, ...LOOKBACK, ...EAGER];
-  COLS.forEach(cx => ROWS.forEach(z => [-1, 1].forEach(side => {
-    const seat = seatFor(cx, z, side);
+  const UNIFORM = ['#2c3660', '#6b2234', '#3a4458'];
+  COLS.forEach(cx => ROWS.forEach(z => [-1, 1].forEach(sideOfDesk => {
+    const seat = seatFor(cx, z, sideOfDesk);
     if (!reserved.some(r => same(r, seat)) && rand() < 0.14) return;
-    const girl = rand() < 0.5, skin = pick(SKIN), hairColor = pick(HAIR), shirt = pick(SHIRT);
-    const kid = new THREE.Group();
-    kid.position.set(seat.x, 0.455, seat.z);
-    const body = new THREE.Group();
-    kid.add(body);
-    const torso = new THREE.Mesh(geo.torso, mat(shirt)); torso.position.y = 0.27; body.add(torso);
-    const tie = new THREE.Mesh(geo.tie, mat(pick(TIE))); tie.position.set(0, 0.33, -0.148); body.add(tie);
-    const head = new THREE.Group(); head.position.y = 0.66; body.add(head);
-    makeFace(head, skin, hairColor, girl);
-    const arms = [-1, 1].map(s => {
-      const a = makeArm(shirt, skin);
-      a.position.set(s * 0.19, 0.42, 0);
-      body.add(a);
-      return a;
+    const skin = pick(SKIN), hair = pick(HAIR), roll = rand();
+    const base = { Skin: skin, Skin_Darker: shade(skin, 0.85), Hair: hair, Eyebrows: '#120d0a' };
+    let gltf, palette;
+    if (roll < 0.42) {
+      gltf = models.girl;
+      palette = { ...base, Red: hair, LimeGreen: pick(UNIFORM), Gold: '#f1efe8', Brown: '#1d1715' };
+    } else if (roll < 0.72) {
+      gltf = models.boy;
+      palette = { ...base, LightBrown: pick(['#f2f1ea', '#dce7f3', '#f2f1ea']), LightBlue: pick(['#262f4d', '#3b4050']), Red_Dark: '#19191b' };
+    } else {
+      gltf = models.boySweater;
+      palette = { ...base, Purple: pick(UNIFORM), LightBlue: '#454b57', White: '#f2f1ea' };
+    }
+    const ch = makeCharacter(gltf, palette, 1.4 + rand() * 0.16);
+    const { holder, bones: b, side } = ch;
+    // sit: thighs forward, shins down, forearms resting on the desk
+    ['L', 'R'].forEach(sd => {
+      const s = side[sd];
+      aim(holder, b[`UpperLeg${sd}`], b[`LowerLeg${sd}`], LEG_UP(s));
+      if (b[`Foot${sd}`]) aim(holder, b[`LowerLeg${sd}`], b[`Foot${sd}`], LEG_DOWN);
+      aim(holder, b[`UpperArm${sd}`], b[`LowerArm${sd}`], ARM_REST(s));
+      aim(holder, b[`LowerArm${sd}`], b[`Wrist${sd}`], FORE_REST(s));
     });
-    scene.add(kid);
-    const k = {
-      group: kid, body, head, arms, seat, phase: rand() * 10,
-      writer: rand() < 0.35, delay: rand() * 0.35, raiseSide: rand() < 0.75 ? 1 : 0,
+    holder.updateMatrixWorld(true);
+    b.Hips.getWorldPosition(_a);
+    holder.position.set(seat.x - _a.x, 0.54 - _a.y, seat.z + 0.04 - _a.z);
+    scene.add(holder);
+    holder.updateMatrixWorld(true);
+    const posed = ['Chest', 'Neck', 'Head', 'UpperArmL', 'LowerArmL', 'UpperArmR', 'LowerArmR'].map(n => [b[n], b[n].quaternion.clone()]);
+    const raiseSide = rand() < 0.75 ? 'R' : 'L';
+    kids.push({
+      ...ch, seat, posed, raiseSide, phase: rand() * 10,
+      writer: rand() < 0.35, delay: rand() * 0.35,
       hero: same(seat, HERO), bulb: same(seat, BULB),
-      lookBack: LOOKBACK.some(r => same(r, seat)), eager: EAGER.some(r => same(r, seat))
-    };
-    kids.push(k);
+      lookBack: LOOKBACK.some(r => same(r, seat)), eager: EAGER.some(r => same(r, seat)),
+      tmpU: new THREE.Vector3(), tmpL: new THREE.Vector3()
+    });
   })));
-  const heroKid = kids.find(k => k.hero);
 
-  // teacher: saree, blouse, bun, chalk
-  const teacher = new THREE.Group();
+  function poseKid(k, yaw, pitch, raise, writing) {
+    k.posed.forEach(([bone, q]) => bone.quaternion.copy(q));
+    k.holder.updateMatrixWorld(true);
+    const b = k.bones, h = k.holder;
+    if (Math.abs(yaw) > 0.002) {
+      turn(h, b.Chest, UP, yaw * 0.3);
+      turn(h, b.Neck, UP, yaw * 0.4);
+      turn(h, b.Head, UP, yaw * 0.3);
+    }
+    if (Math.abs(pitch) > 0.002) turn(h, b.Head, RIGHT, pitch);
+    if (raise > 0.002) {
+      const sd = k.raiseSide, s = k.side[sd];
+      aim(h, b[`UpperArm${sd}`], b[`LowerArm${sd}`], blendDir(k.tmpU, ARM_REST(s), ARM_UP(s), raise));
+      aim(h, b[`LowerArm${sd}`], b[`Wrist${sd}`], blendDir(k.tmpL, FORE_REST(s), FORE_UP(s), raise));
+    } else if (writing) {
+      const s = k.side.R;
+      aim(h, b['LowerArmR'], b['WristR'], k.tmpL.copy(FORE_REST(s)).add(_a.set(writing, 0, writing * 0.5)).normalize());
+    }
+  }
+
+  // teacher: real walk / idle / wave clips, with posed arms for writing, pointing and helping
+  const T = makeCharacter(models.teacher, { Black: '#553aa6', White: '#f6f2ea', Skin: '#a87450', Hair_Blond: '#17110d', Hair_Brown: '#17110d', Brown: '#2a1d16' }, 1.66);
+  const teacher = T.holder, tb = T.bones, sR = T.side.R;
   scene.add(teacher);
-  const skirt = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.29, 0.98, 20), mat('#8e6ad9'));
-  skirt.position.y = 0.49;
-  const border = new THREE.Mesh(new THREE.CylinderGeometry(0.292, 0.3, 0.07, 20), mat(C.lime));
-  border.position.y = 0.035;
-  teacher.add(skirt, border);
-  const upper = new THREE.Group(); upper.position.y = 0.95; teacher.add(upper);
-  const tTorso = new THREE.Mesh(new THREE.CapsuleGeometry(0.17, 0.3, 4, 12), mat('#f1e3c8')); tTorso.position.y = 0.24; upper.add(tTorso);
-  const pallu = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.62, 0.355), mat('#7850ce'));
-  pallu.position.set(-0.05, 0.27, 0); pallu.rotation.z = 0.55; upper.add(pallu);
-  const tHead = new THREE.Group(); tHead.position.y = 0.66; upper.add(tHead);
-  makeFace(tHead, '#c18762', '#1f1915', false);
-  const bun = new THREE.Mesh(geo.bun, mat('#1f1915')); bun.position.set(0, 0.06, 0.15); tHead.add(bun);
-  const bindi = new THREE.Mesh(new THREE.SphereGeometry(0.012, 8, 6), mat('#c8283c')); bindi.position.set(0, 0.075, -0.147); tHead.add(bindi);
-  const glasses = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.006, 6, 16), mat(C.ink));
-  [-1, 1].forEach(s => { const gl = glasses.clone(); gl.position.set(s * 0.056, 0.02, -0.15); tHead.add(gl); });
-  const tArms = [-1, 1].map(s => {
-    const a = makeArm('#f1e3c8', '#c18762', 0.34);
-    a.position.set(s * 0.22, 0.44, 0);
-    upper.add(a);
+  const mixer = new THREE.AnimationMixer(T.model);
+  const action = name => {
+    const a = mixer.clipAction(THREE.AnimationClip.findByName(models.teacher.animations, `CharacterArmature|${name}`));
+    a.play();
+    a.setEffectiveWeight(0);
     return a;
-  });
-  const chalk = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.09, 6), mat('#ffffff'));
-  chalk.position.set(0, -0.48, -0.03); chalk.rotation.x = 1.2;
-  tArms[1].add(chalk);
-  const tShadow = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.9), blobM);
-  tShadow.rotation.x = -Math.PI / 2;
-  scene.add(tShadow);
+  };
+  const idleA = action('Idle'), walkA = action('Walk'), waveA = action('Wave');
+  // bones we bend by hand are reset each frame so the bends never accumulate
+  const teacherRest = ['Abdomen', 'Torso', 'Head', 'UpperArmR', 'LowerArmR'].map(n => [tb[n], tb[n].quaternion.clone()]);
+  idleA.setEffectiveWeight(1);
+  const chalk = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.075, 8), mat('#ffffff'));
+  tb['WristR'].add(chalk);
+  chalk.scale.setScalar(1 / tb['WristR'].getWorldScale(new THREE.Vector3()).x);
+  chalk.position.set(0, 0.09 / tb['WristR'].getWorldScale(new THREE.Vector3()).x, 0);
+  const WRITE_U = V(sR * 0.28, 0.7, -0.66), WRITE_L = V(sR * 0.08, 0.86, -0.5);
+  const POINT_U = V(sR * 0.92, 0.28, -0.26), POINT_L = V(sR * 0.9, 0.42, -0.1);
+  const LEAN_U = V(sR * 0.12, -0.5, -0.86), LEAN_L = V(-sR * 0.05, -0.55, -0.83);
+  const armU = new THREE.Vector3(), armL = new THREE.Vector3();
 
   // teacher keyframes per chapter: position, facing (radians, 0 = toward the board), pose
   const TK = [
@@ -594,7 +662,8 @@ function build() {
   const planeGeo = new THREE.BufferGeometry();
   planeGeo.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, -0.22, -0.13, 0.02, 0.12, 0, -0.04, 0.12, 0, 0, -0.22, 0, -0.04, 0.12, 0.13, 0.02, 0.12], 3));
   planeGeo.computeVertexNormals();
-  const paperPlane = new THREE.Mesh(planeGeo, new THREE.MeshToonMaterial({ color: '#ffffff', gradientMap: ramp3, side: THREE.DoubleSide }));
+  const paperPlane = new THREE.Mesh(planeGeo, surface({ color: '#ffffff', side: THREE.DoubleSide }));
+  paperPlane.castShadow = true;
   scene.add(paperPlane);
 
   // dust in the sunbeams
@@ -622,7 +691,8 @@ function build() {
   notebook.position.set(HERO.x - 0.06, 0.77, ROWS[2] - 0.02);
   notebook.rotation.y = Math.PI + 0.3;
   const nbCover = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.012, 0.36), mat(C.purple));
-  const nbPage = new THREE.Mesh(new THREE.PlaneGeometry(0.54, 0.338), new THREE.MeshBasicMaterial({ map: nbTex, color: '#f4f1e6' }));
+  const nbPage = new THREE.Mesh(new THREE.PlaneGeometry(0.54, 0.338), surface({ map: nbTex, roughness: 0.95 }));
+  nbPage.receiveShadow = true;
   nbPage.rotation.x = -Math.PI / 2; nbPage.position.y = 0.0065;
   const pencil = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, 0.19, 6), mat(C.lime));
   pencil.rotation.set(Math.PI / 2, 0, 0.9); pencil.position.set(0.2, 0.014, 0.05);
@@ -699,7 +769,7 @@ function build() {
         g.beginPath(); g.moveTo(1694, 482); g.lineTo(1766, 482); g.moveTo(1702, 508); g.lineTo(1758, 508); g.stroke();
         for (let i = 0; i < 7; i++) { const a = -Math.PI * 0.95 + i * 0.32; g.beginPath(); g.moveTo(1730 + Math.cos(a) * 125, 300 + Math.sin(a) * 125); g.lineTo(1730 + Math.cos(a) * 160, 300 + Math.sin(a) * 160); g.stroke(); }
       }),
-      text('MNIT × Codevidhya · 2026', 1240, 735, 66, CHALK_LILAC)
+      text('MIIC × Codevidhya · 2026', 1240, 735, 66, CHALK_LILAC)
     ],
     [
       text('3 rounds. 1 big leap.', 120, 140, 112, CHALK, 700),
@@ -792,7 +862,7 @@ function build() {
     { pos: [0.4, 2.3, -5.55], look: [-0.2, 0.95, 3.2] }
   ];
   const PORTRAIT = [
-    { pos: [5.2, 2.05, 6.4], look: [-0.6, 1.1, -3.2] },
+    { pos: [5.2, 2.05, 6.4], look: [-0.6, 1.75, -3.2] },
     { pos: [-0.25, 1.5, 5.3], look: [-0.15, 1.05, -4.5] },
     { pos: [0.2, 1.5, -2.5], look: [1.52, 1.12, -0.75] },
     { pos: [0.45, 2.05, 0.4], look: [0.4, 2.0, -7] },
@@ -829,7 +899,6 @@ function build() {
     target = total > 0 ? clamp(-rect.top / total) : 0;
   }
   addEventListener('scroll', () => { readScroll(); wake(); }, { passive: true });
-  const calm = () => reduce.matches || root.classList.contains('motion-paused');
 
   function story(p) {
     const s = p * LAST;
@@ -856,7 +925,6 @@ function build() {
     counted = true;
     section.querySelectorAll('[data-cr-count]').forEach(el => {
       const end = Number(el.dataset.crCount);
-      if (calm()) { el.textContent = end.toLocaleString('en-IN'); return; }
       const start = performance.now();
       const stepCount = now => {
         const t = clamp((now - start) / 1300);
@@ -876,7 +944,7 @@ function build() {
   };
   railLinks.forEach((a, k) => a.addEventListener('click', e => {
     e.preventDefault();
-    scrollTo({ top: chapterTop(k), behavior: calm() ? 'auto' : 'smooth' });
+    scrollTo({ top: chapterTop(k), behavior: 'smooth' });
   }));
   panels.forEach((p, k) => p.addEventListener('focusin', () => {
     if (lastActive !== k) scrollTo({ top: chapterTop(k), behavior: 'auto' });
@@ -908,17 +976,15 @@ function build() {
     return { p, r: a.r + dr * smooth(clamp(f * 1.6)), a, b, f };
   }
 
-  let prevTeacher = new THREE.Vector3(-1.05, 0.18, -6.42), walk = 0;
+  let prevTeacher = new THREE.Vector3(-1.05, 0.18, -6.42), moving = 0, heading = 0;
   function renderFrame(now) {
     raf = 0;
     const dt = Math.min(0.1, last ? (now - last) / 1000 : 0.016);
     last = now;
-    const still = calm();
-    if (!still) time += dt;
-    intro = still ? 1 : Math.min(1, intro + dt / 1.8);
+    time += dt;
+    intro = Math.min(1, intro + dt / 1.8);
 
-    if (still) progress = Math.round(target * LAST) / LAST;
-    else progress += (target - progress) * (1 - Math.exp(-dt * 5.5));
+    progress = SNAP ? target : progress + (target - progress) * (1 - Math.exp(-dt * 5.5));
     if (Math.abs(target - progress) < 0.00005) progress = target;
 
     const { s, c } = story(progress);
@@ -934,51 +1000,58 @@ function build() {
     }
     pointer.x += (pointer.tx - pointer.x) * 0.05;
     pointer.y += (pointer.ty - pointer.y) * 0.05;
-    if (!still) {
-      right.subVectors(camLook, camPos).cross(up).normalize();
-      camPos.addScaledVector(right, pointer.x * 0.14).addScaledVector(up, -pointer.y * 0.08);
-      camPos.y += Math.sin(time * 0.6) * 0.012;
-    }
+    right.subVectors(camLook, camPos).cross(up).normalize();
+    camPos.addScaledVector(right, pointer.x * 0.14).addScaledVector(up, -pointer.y * 0.08);
+    camPos.y += Math.sin(time * 0.6) * 0.012;
     camera.position.copy(camPos);
     camera.lookAt(camLook);
 
     // blackboard: scene 0 written on arrival, rewrites itself as the story moves
     let boardScene, reveal;
-    if (c < 2.25) { boardScene = 0; reveal = c < 2.0 ? (still ? 1 : clamp(intro * 1.4 - 0.15)) : 1 - ramp(c, 2.0, 2.25); }
+    if (c < 2.25) { boardScene = 0; reveal = c < 2.0 ? clamp(intro * 1.4 - 0.15) : 1 - ramp(c, 2.0, 2.25); }
     else if (c < 5.3) { boardScene = 1; reveal = c < 5.05 ? ramp(c, 2.3, 2.95) : 1 - ramp(c, 5.05, 5.3); }
     else { boardScene = 2; reveal = ramp(c, 5.35, 5.95); }
-    drawBoard(boardScene, still ? Math.round(reveal) : reveal);
-    drawNotebook(still ? (c > 4.5 ? 1 : 0) : ramp(c, 4.35, 5.0));
+    drawBoard(boardScene, reveal);
+    drawNotebook(ramp(c, 4.35, 5.0));
 
-    // teacher
-    const T = teacherAt(c);
-    tPos.set(...T.p);
-    teacher.position.copy(tPos);
-    teacher.rotation.y = T.r;
-    const speed = tmp.subVectors(tPos, prevTeacher).length() / Math.max(dt, 0.001);
+    // teacher: walks the path facing where she goes, then settles into each chapter's pose
+    const TT = teacherAt(c);
+    tPos.set(...TT.p);
+    const vx = tPos.x - prevTeacher.x, vz = tPos.z - prevTeacher.z;
+    const speed = Math.hypot(vx, vz) / Math.max(dt, 0.001);
     prevTeacher.copy(tPos);
-    walk += Math.min(speed, 3) * dt * 7;
-    const moving = clamp(speed / 0.8);
-    teacher.position.y += Math.abs(Math.sin(walk)) * 0.03 * moving;
-    skirt.rotation.z = Math.sin(walk) * 0.05 * moving;
-    tShadow.position.set(tPos.x, T.p[1] + 0.012, tPos.z);
-    const pose = w => (T.a.pose === w ? 1 - smooth(T.f) : 0) + (T.b.pose === w ? smooth(T.f) : 0);
-    const wWrite = pose('write'), wPoint = pose('point'), wLean = pose('lean'), wCheer = pose('cheer');
-    upper.rotation.x = -0.32 * wLean;
-    tHead.rotation.x = -0.25 * wLean;
-    tHead.rotation.y = Math.sin(time * 0.7) * 0.12 * (1 - wWrite);
-    const writeWiggle = Math.sin(time * 5) * 0.12;
-    tArms[1].rotation.x = 2.55 * wWrite + writeWiggle * wWrite + 1.5 * wPoint + 0.75 * wLean + 2.75 * wCheer + Math.sin(time * 4) * 0.1 * wCheer;
-    tArms[1].rotation.z = 0.1 + 0.4 * wWrite + 0.85 * wPoint + 0.1 * wLean + 0.35 * wCheer + Math.sin(time * 5) * 0.08 * wWrite;
-    tArms[0].rotation.x = 0.15 + 0.55 * wLean + 2.75 * wCheer + Math.sin(time * 4 + 1) * 0.1 * wCheer;
-    tArms[0].rotation.z = -0.12 - 0.35 * wCheer;
-    chalk.visible = wCheer < 0.5;
+    moving += (clamp(speed / 0.6) - moving) * (1 - Math.exp(-dt * 8));
+    if (speed > 0.05) heading = Math.atan2(-vx, -vz);
+    let facing = TT.r + (((heading - TT.r + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI) * moving;
+    teacher.position.copy(tPos);
+    teacher.rotation.y = facing;
+    const pose = w => (TT.a.pose === w ? 1 - smooth(TT.f) : 0) + (TT.b.pose === w ? smooth(TT.f) : 0);
+    const still = 1 - moving;
+    const wWrite = pose('write') * still, wPoint = pose('point') * still, wLean = pose('lean') * still, wCheer = pose('cheer') * still;
+    walkA.setEffectiveWeight(moving);
+    walkA.timeScale = clamp(speed / 1.1, 0.7, 1.8);
+    waveA.setEffectiveWeight(wCheer);
+    idleA.setEffectiveWeight(Math.max(0, 1 - moving - wCheer));
+    teacherRest.forEach(([bone, q]) => bone.quaternion.copy(q));
+    mixer.update(dt);
+    teacher.updateMatrixWorld(true);
+    if (wLean > 0.002) { turn(teacher, tb.Abdomen, RIGHT, -0.16 * wLean); turn(teacher, tb.Torso, RIGHT, -0.14 * wLean); turn(teacher, tb.Head, RIGHT, -0.28 * wLean); }
+    const armW = Math.min(1, wWrite + wPoint + wLean);
+    if (armW > 0.002) {
+      const wig = Math.sin(time * 5) * 0.12 * wWrite;
+      armU.set(0, 0, 0).addScaledVector(WRITE_U, wWrite).addScaledVector(POINT_U, wPoint).addScaledVector(LEAN_U, wLean);
+      armU.x += wig;
+      armL.set(0, 0, 0).addScaledVector(WRITE_L, wWrite).addScaledVector(POINT_L, wPoint).addScaledVector(LEAN_L, wLean);
+      aim(teacher, tb['UpperArmR'], tb['LowerArmR'], armU.normalize(), armW);
+      aim(teacher, tb['LowerArmR'], tb['WristR'], armL.normalize(), armW);
+    }
+    chalk.visible = c < 3.6;
 
     // students
     const handsUp = c > 5.2;
     kids.forEach(k => {
       const t = time + k.phase;
-      let yaw = Math.sin(t * 0.35) * 0.18, pitch = 0, lean = Math.sin(t * 0.8) * 0.02;
+      let yaw = Math.sin(t * 0.35) * 0.22, pitch = Math.sin(t * 0.5) * 0.04;
       // back benchers turn round to look at the camera
       if (k.lookBack) {
         const w = bell(c, 1, 0.75);
@@ -992,44 +1065,36 @@ function build() {
         const toT = Math.atan2(-(tPos.x - k.seat.x), -(tPos.z - k.seat.z));
         yaw = lerp(yaw, clamp(toT, -1.6, 1.6), w);
       }
-      if (k.hero) pitch = -0.42 * bell(c, 5, 0.6);
-      if (k.bulb) { pitch = 0.12 * bell(c, 2, 0.7); }
-      k.body.rotation.y = yaw * 0.38;
-      k.head.rotation.y = yaw * 0.62;
-      k.head.rotation.x = pitch;
-      k.body.rotation.x = lean;
+      if (k.hero) pitch = lerp(pitch, -0.5, bell(c, 5, 0.6));
+      if (k.bulb) pitch = lerp(pitch, 0.18, bell(c, 2, 0.7));
 
       let raise = 0;
       if (k.eager) raise = Math.max(raise, bell(c, 3, 0.75));
-      if (k.bulb) raise = Math.max(raise, bell(c, 2, 0.6) * 0.75);
+      if (k.bulb) raise = Math.max(raise, bell(c, 2, 0.6) * 0.85);
       if (handsUp) raise = Math.max(raise, ramp(c, 5.3 + k.delay, 5.75 + k.delay));
-      const writing = k.writer && raise < 0.1 ? Math.sin(t * 9) * 0.06 : 0;
-      k.arms.forEach((a, i) => {
-        const isRaiser = (i === 1) === Boolean(k.raiseSide);
-        const r = isRaiser ? raise : 0;
-        const wave = r > 0.6 ? Math.sin(t * 6) * 0.14 * r : 0;
-        a.rotation.x = lerp(1.15 + (i === 1 ? writing : 0), 3.05, r) + wave;
-        a.rotation.z = lerp(i ? -0.18 : 0.18, i ? 0.32 : -0.32, r);
-        a.scale.y = lerp(1, 1.4, r);
-      });
-      if (raise > 0.5) k.group.position.y = 0.455 + Math.sin(t * 7) * 0.012 * raise;
-      else k.group.position.y = 0.455;
+      if (raise > 0.6) raise += Math.sin(t * 6) * 0.04;
+      const writing = k.writer && raise < 0.05 ? Math.sin(t * 9) * 0.12 : 0;
+      poseKid(k, yaw, pitch, clamp(raise), writing);
     });
 
     // idea bulbs
     const bulbW = bell(c, 2, 0.7);
     mainBulb.scale.setScalar(Math.max(0.001, bulbW * 0.8 * (1 + Math.sin(time * 3) * 0.05)));
-    mainBulb.position.set(bulbKid.seat.x, 1.62 + Math.sin(time * 2) * 0.03, bulbKid.seat.z);
+    bulbKid.bones.Head.getWorldPosition(_b);
+    mainBulb.position.set(_b.x, _b.y + 0.34 + Math.sin(time * 2) * 0.03, _b.z);
     bulbLight.position.copy(mainBulb.position);
     bulbLight.intensity = bulbW * 2.2;
     finaleBulbs.forEach(b => {
       const w = ramp(c, 5.45 + b.delay, 5.9 + b.delay);
       b.bulb.scale.setScalar(Math.max(0.001, w * 0.8));
-      b.bulb.position.set(b.kid.seat.x, 1.66 + Math.sin(time * 2 + b.delay * 9) * 0.03, b.kid.seat.z);
+      if (w > 0.01) {
+        b.kid.bones.Head.getWorldPosition(_b);
+        b.bulb.position.set(_b.x, _b.y + 0.36 + Math.sin(time * 2 + b.delay * 9) * 0.03, _b.z);
+      }
     });
 
     // ambient life
-    if (!still) {
+    {
       fans.forEach((f, i) => { f.rotation.y += dt * (5.5 + i); });
       const pt = time * 0.22;
       paperPlane.position.set(Math.sin(pt) * 3.4, 2.55 + Math.sin(pt * 2.3) * 0.25, 0.8 + Math.cos(pt) * 2.6);
@@ -1055,8 +1120,6 @@ function build() {
       root.classList.remove('cr-pending');
       root.classList.add('cr-live');
     }
-    // with motion off, only draw while the camera is still catching up
-    if (still && progress === target) running = false;
     if (running) raf = requestAnimationFrame(renderFrame);
   }
 
@@ -1072,7 +1135,6 @@ function build() {
   }, { rootMargin: '120px' }).observe(section);
   document.addEventListener('visibilitychange', () => (document.hidden ? sleep() : wake()));
   new MutationObserver(wake).observe(root, { attributes: true, attributeFilter: ['class'] });
-  reduce.addEventListener('change', wake);
 
   resize();
   readScroll();

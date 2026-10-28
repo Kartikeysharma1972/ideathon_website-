@@ -17,4 +17,4 @@ dialog{border:1px solid #d7d7ca;border-radius:15px;background:var(--paper);color
 @media(max-width:700px){.hero{grid-template-columns:minmax(0,1fr);overflow:clip}.hero-art{justify-self:center;margin-inline:0;left:0}.hero-copy{min-width:0}.faq-intro h2>span{margin-left:8px}}
 @media(max-width:700px){.mentor-visual{overflow:clip}.round-card{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
 @media(max-width:390px){.hero-art{left:0}.hero h1{font-size:clamp(39px,12.05vw,47px)}}
-@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{animation:none!important;transition:none!important}.motion-ready .reveal{opacity:1;transform:none}.pencil-cursor{display:none}.ticker-track{transform:none}.hero-copy,.hero-art,.scroll-hint{opacity:1;translate:none}}
+

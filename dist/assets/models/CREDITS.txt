@@ -1,0 +1,6 @@
+Character models: Quaternius (https://quaternius.com), CC0 1.0 public domain, downloaded from poly.pizza.
+student-boy.glb          <- "Casual Character"  https://poly.pizza/m/kZ3DmIoGip
+student-boy-sweater.glb  <- "Hoodie Character"  https://poly.pizza/m/gKLBoRsyKe
+student-girl.glb         <- "Animated Woman"    https://poly.pizza/m/nIItLV9nxS
+teacher.glb              <- "Suit"              https://poly.pizza/m/sOUciDsoVV
+Colours are changed at runtime in dist/classroom.js; the files are unmodified.
