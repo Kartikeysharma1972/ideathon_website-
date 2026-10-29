@@ -10,6 +10,10 @@ To retune a camera shot, edit `SHOTS` (and `PORTRAIT` for phones) in `classroom.
 
 The students and teacher are CC0 rigged characters by Quaternius (via poly.pizza), stored in `dist/assets/models/` and recoloured as school uniforms in code. Students are posed seated with a small bone-aiming solver (`aim`/`turn` in `classroom.js`); the teacher uses the models' own Idle/Walk/Wave clips plus posed arms for writing, pointing and helping. Lighting is physically based: an environment map for bounce light and a shadow-casting sun that only enters through the window openings. Add `?snap` to the URL to skip camera easing (handy for screenshots).
 
+The colour theme follows Codevidhya: primary blue `#399aff`, dark blue `#0063c9`, white backgrounds and navy text. In the stylesheets the brand blue still lives in the `--purple` variable.
+
+For speed: the sun's shadow map is drawn once (the room is static), characters don't cast sun shadows, matte surfaces use Lambert shading, each character's skeleton is uploaded only when its pose changes, students outside the camera view are skipped, and the pixel ratio (max 1.25) steps down automatically on slow devices. Add `?perf` to collect frame timings in `window.__perf`.
+
 Motion is always on: there is no motion toggle, and reduced-motion preferences do not change the experience.
 
 The pencil cursor (fine pointers only) hides the system cursor; its graphite tip is the hotspot. It tilts over interactive elements and leaves a small ring on click. It steps aside while the registration dialog is open.

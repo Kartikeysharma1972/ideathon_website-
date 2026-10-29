@@ -80,11 +80,11 @@
       for (let j = i + 1; j < points.length; j++) {
         const b = points[j], distance = Math.hypot(a.x - b.x, a.y - b.y);
         if (distance < 100) {
-          ctx.strokeStyle = `rgba(123,78,197,${(1 - distance / 100) * .2})`;
+          ctx.strokeStyle = `rgba(32,134,243,${(1 - distance / 100) * .2})`;
           ctx.lineWidth = .65; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
         }
       }
-      ctx.fillStyle = i % 4 === 0 ? '#a9c96daa' : '#9b70d990';
+      ctx.fillStyle = i % 4 === 0 ? '#75b2f4aa' : '#53a2f690';
       ctx.beginPath(); ctx.arc(a.x, a.y, a.radius, 0, Math.PI * 2); ctx.fill();
     }
   }
@@ -97,7 +97,7 @@
     const tilt = -.2 + fieldPointer.y * .4 + (mode === 1 ? .6 : 0);
     const cy = Math.cos(rotation), sy = Math.sin(rotation), cx = Math.cos(tilt), sx = Math.sin(tilt);
     const glow = ctx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, scale * 1.5);
-    glow.addColorStop(0, 'rgba(168,110,243,.09)'); glow.addColorStop(.65, 'rgba(130,74,212,.035)'); glow.addColorStop(1, 'rgba(90,49,151,0)');
+    glow.addColorStop(0, 'rgba(106,174,247,.09)'); glow.addColorStop(.65, 'rgba(42,140,244,.035)'); glow.addColorStop(1, 'rgba(10,97,190,0)');
     ctx.fillStyle = glow; ctx.fillRect(0, 0, w, h);
     let delta = 0;
     const smoothing = paused ? 1 : 1 - Math.pow(.93, step);
@@ -125,7 +125,7 @@
         const distance = Math.hypot(a.x - b.x, a.y - b.y);
         if (distance < scale * .43 && Math.abs(a.z - b.z) < .7) {
           const alpha = Math.max(.015, (1 - distance / (scale * .43)) * .19 * (1.15 - a.z * .35));
-          ctx.strokeStyle = `rgba(185,143,239,${alpha})`;
+          ctx.strokeStyle = `rgba(133,189,249,${alpha})`;
           ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
         }
       }
@@ -133,16 +133,16 @@
     projected.sort((a, b) => b.z - a.z);
     for (const point of projected) {
       const alpha = Math.min(1, Math.max(.14, .68 - point.z * .4));
-      ctx.fillStyle = point.i % 7 === 0 ? `rgba(218,249,155,${alpha})` : `rgba(202,165,252,${alpha})`;
+      ctx.fillStyle = point.i % 7 === 0 ? `rgba(203,227,252,${alpha})` : `rgba(165,207,252,${alpha})`;
       ctx.beginPath(); ctx.arc(point.x, point.y, Math.max(.45, (point.i % 11 === 0 ? 1.9 : 1.05) * point.depth), 0, Math.PI * 2); ctx.fill();
     }
     // A tilted orbital path frames each morph without covering the text.
     ctx.save(); ctx.translate(w / 2, h / 2); ctx.rotate(-.4 + Math.sin(time * .1) * .12);
-    ctx.strokeStyle = 'rgba(195,163,239,.16)'; ctx.lineWidth = .7;
+    ctx.strokeStyle = 'rgba(152,199,250,.16)'; ctx.lineWidth = .7;
     ctx.beginPath(); ctx.ellipse(0, 0, scale * 1.43, scale * .43, 0, 0, Math.PI * 2); ctx.stroke();
     const angle = paused ? .9 : time * .5;
     const ox = Math.cos(angle) * scale * 1.43, oy = Math.sin(angle) * scale * .43;
-    ctx.fillStyle = '#def998'; ctx.shadowColor = '#def998'; ctx.shadowBlur = 12;
+    ctx.fillStyle = '#c8e1fc'; ctx.shadowColor = '#c8e1fc'; ctx.shadowBlur = 12;
     ctx.beginPath(); ctx.arc(ox, oy, 3, 0, Math.PI * 2); ctx.fill(); ctx.restore();
   }
   function drawTrail(step) {
@@ -153,7 +153,7 @@
       const p = trail[i]; p.life -= .026 * step;
       if (p.life <= 0) { trail.splice(i, 1); continue; }
       p.x += p.vx * step; p.y += p.vy * step;
-      ctx.strokeStyle = p.lime ? `rgba(159,190,75,${p.life * .65})` : `rgba(137,82,201,${p.life * .6})`;
+      ctx.strokeStyle = p.lime ? `rgba(76,155,240,${p.life * .65})` : `rgba(39,138,244,${p.life * .6})`;
       ctx.lineWidth = 1;
       const r = p.life * p.radius;
       ctx.beginPath(); ctx.moveTo(p.x - r, p.y); ctx.lineTo(p.x + r, p.y); ctx.moveTo(p.x, p.y - r); ctx.lineTo(p.x, p.y + r); ctx.stroke();

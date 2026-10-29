@@ -5,7 +5,6 @@ import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 const root = document.documentElement;
 const section = document.getElementById('classroom');
@@ -56,17 +55,22 @@ try {
 
 function build(models) {
   const isSmall = () => innerWidth < 760;
-  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, isSmall() ? 1.5 : 1.75));
+  // resolution cap, lowered automatically if a device can't hold a smooth frame rate
+  const dprCap = () => Math.min(devicePixelRatio || 1, isSmall() ? 1.25 : 1.25);
+  let dpr = dprCap();
+  renderer.setPixelRatio(dpr);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  // the sun and the room never move, so the shadow map is drawn once instead of every frame
+  renderer.shadowMap.type = THREE.PCFShadowMap;
+  renderer.shadowMap.autoUpdate = false;
 
   const scene = new THREE.Scene();
   const C = {
-    wall: '#f3ecdb', dado: '#c7b8f0', skirting: '#7850ce', floor: '#c99c6e', ceiling: '#f8f4ea',
-    wood: '#d9a670', woodDark: '#8f5d3a', metal: '#4b4c44', lime: '#cfe97a', purple: '#7850ce',
+    wall: '#f3f6fa', dado: '#cfe3f8', skirting: '#399aff', floor: '#c99c6e', ceiling: '#f8f4ea',
+    wood: '#d9a670', woodDark: '#8f5d3a', metal: '#4b4c44', lime: '#d8ebff', purple: '#399aff',
     ink: '#25251f', board: '#2d3b33', frame: '#8a5a35', paper: '#fbf8ef', white: '#f6f5ef'
   };
   scene.background = new THREE.Color(C.wall);
@@ -74,18 +78,17 @@ function build(models) {
 
   const camera = new THREE.PerspectiveCamera(42, 1, 0.05, 60);
 
-  // soft room bounce from an environment map, warm sun through the windows with real shadows
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-  scene.add(new THREE.HemisphereLight('#fff6e6', '#c9b49a', 1.25));
+  // soft sky/floor bounce, warm sun through the windows with real (baked once) shadows
+  scene.add(new THREE.HemisphereLight('#fbfcff', '#c9b9a4', 2.1));
   const sunDir = new THREE.Vector3(1, -0.92, 0.26).normalize();
   const sun = new THREE.DirectionalLight('#ffe2b8', 3.4);
   sun.position.copy(sunDir).multiplyScalar(-16);
   sun.castShadow = true;
   sun.shadow.mapSize.setScalar(innerWidth < 760 ? 1024 : 2048);
   Object.assign(sun.shadow.camera, { left: -11, right: 11, top: 11, bottom: -11, near: 2, far: 34 });
-  sun.shadow.bias = -0.0004;
-  sun.shadow.normalBias = 0.025;
+  sun.shadow.bias = -0.0006;
+  sun.shadow.normalBias = 0.04;
+  sun.shadow.radius = 2.5;
   scene.add(sun, sun.target);
   const fill = new THREE.DirectionalLight('#e8e4ff', 0.55);
   fill.position.set(6, 5, -5);
@@ -93,7 +96,8 @@ function build(models) {
 
   // ---------- materials ----------
   const materials = new Map();
-  const surface = extra => new THREE.MeshStandardMaterial({ roughness: 0.78, metalness: 0, envMapIntensity: 0.55, ...extra });
+  // everything in the room is matte, so cheap Lambert shading looks the same as PBR at a fraction of the cost
+  const surface = ({ roughness, metalness, envMapIntensity, ...extra } = {}) => new THREE.MeshLambertMaterial(extra);
   const mat = color => {
     if (!materials.has(color)) materials.set(color, surface({ color }));
     return materials.get(color);
@@ -122,11 +126,12 @@ function build(models) {
   const box = (material, w, h, d, x, y, z, ry = 0) => addStatic(new THREE.BoxGeometry(w, h, d), material, x, y, z, 0, ry, 0);
   const cyl = (material, rt, rb, h, x, y, z, seg = 16, rx = 0, rz = 0) => addStatic(new THREE.CylinderGeometry(rt, rb, h, seg), material, x, y, z, rx, 0, rz);
   function flushStatic() {
+    const thinMetal = new Set([mat(C.metal), mat('#5b5c52')]);
     buckets.forEach((list, material) => {
       const mesh = new THREE.Mesh(mergeGeometries(list, false), material);
       mesh.matrixAutoUpdate = false;
       mesh.castShadow = material !== blobM;
-      mesh.receiveShadow = true;
+      mesh.receiveShadow = !thinMetal.has(material);
       scene.add(mesh);
     });
     buckets.clear();
@@ -155,7 +160,7 @@ function build(models) {
   scene.add(floor);
 
   const wallM = mat(C.wall), dadoM = mat(C.dado), skirtM = mat(C.skirting);
-  box(basic('#ebe4d4'), W * 2, 0.1, D * 2, 0, H + 0.05, 0);
+  box(basic('#edf1f6'), W * 2, 0.1, D * 2, 0, H + 0.05, 0);
   // walls: upper paint + lilac dado + purple trim line
   [[0, -D - 0.05, W * 2, 0], [0, D + 0.05, W * 2, 0], [-W - 0.05, 0, D * 2, Math.PI / 2], [W + 0.05, 0, D * 2, Math.PI / 2]].forEach(([x, z, len, ry]) => {
     if (x < 0) {
@@ -249,12 +254,12 @@ function build(models) {
   box(frame, 0.12, BOARD.h, 0.08, BOARD.x - BOARD.w / 2 - 0.06, BOARD.y, -D + 0.04);
   box(frame, 0.12, BOARD.h, 0.08, BOARD.x + BOARD.w / 2 + 0.06, BOARD.y, -D + 0.04);
   box(frame, BOARD.w, 0.04, 0.16, BOARD.x, BOARD.y - BOARD.h / 2 - 0.1, -D + 0.12);
-  [[-1.4, '#ffffff'], [-1.25, '#f4c8de'], [-1.12, '#dcf68d'], [1.6, '#ffffff']].forEach(([dx, color]) => addStatic(new THREE.CylinderGeometry(0.012, 0.012, 0.09, 8), mat(color), BOARD.x + dx, BOARD.y - BOARD.h / 2 - 0.065, -D + 0.12, 0, 0.3, Math.PI / 2));
+  [[-1.4, '#ffffff'], [-1.25, '#f4c8de'], [-1.12, '#d2e7ff'], [1.6, '#ffffff']].forEach(([dx, color]) => addStatic(new THREE.CylinderGeometry(0.012, 0.012, 0.09, 8), mat(color), BOARD.x + dx, BOARD.y - BOARD.h / 2 - 0.065, -D + 0.12, 0, 0.3, Math.PI / 2));
   box(mat('#6b4a2f'), 0.22, 0.05, 0.08, BOARD.x + 1.95, BOARD.y - BOARD.h / 2 - 0.055, -D + 0.12);
   box(mat('#f1efe6'), 0.2, 0.02, 0.07, BOARD.x + 1.95, BOARD.y - BOARD.h / 2 - 0.085, -D + 0.12);
 
   // bunting above the board
-  const flagColors = [C.purple, C.lime, '#f2b8d0', '#ffffff', '#9fd3f2'];
+  const flagColors = [C.purple, C.lime, '#0063c9', '#ffffff', '#9fd3f2'];
   for (let i = 0; i < 17; i++) {
     const t = i / 16, x = lerp(-3.6, 4.4, t), y = 3.68 - Math.sin(t * Math.PI) * 0.22;
     const shape = new THREE.Shape();
@@ -264,7 +269,7 @@ function build(models) {
   // sign above bunting
   const signTex = canvasTexture(1024, 128, (g, w, h) => {
     g.fillStyle = '#25251f'; g.fillRect(0, 0, w, h);
-    g.fillStyle = '#dcf68d'; g.font = '700 58px "Space Grotesk", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillStyle = '#d2e7ff'; g.font = '700 58px "Space Grotesk", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
     g.fillText('MIIC × CODEVIDHYA · IDEATHON 2026', w / 2, h / 2 + 3);
   });
   const sign = new THREE.Mesh(new THREE.PlaneGeometry(2.8, 0.35), basic('#ffffff', { map: signTex }));
@@ -287,9 +292,9 @@ function build(models) {
     const r = rng(11);
     for (let i = 0; i < 900; i++) { g.fillStyle = `rgba(110,70,30,${r() * .18})`; g.fillRect(r() * w, r() * h, 2, 2); }
     g.fillStyle = '#25251f'; g.fillRect(w / 2 - 230, 18, 460, 62);
-    g.fillStyle = '#dcf68d'; g.font = '700 40px "Space Grotesk", sans-serif'; g.textAlign = 'center'; g.fillText('OUR BIG IDEAS ✳', w / 2, 63);
+    g.fillStyle = '#d2e7ff'; g.font = '700 40px "Space Grotesk", sans-serif'; g.textAlign = 'center'; g.fillText('OUR BIG IDEAS ✳', w / 2, 63);
     const notes = ['solar bus stop', 'smart dustbin', 'app for lost pets', 'rain saver', 'quiz buddy', 'plant doctor', 'safe crossing', 'water alert', 'book swap', 'clean air map', 'kind canteen', 'what if…?'];
-    const colors = ['#fff3a3', '#dcf68d', '#e2d5ff', '#ffd1df', '#bfe6ff', '#ffffff'];
+    const colors = ['#fff3a3', '#d2e7ff', '#d6e9ff', '#ffd1df', '#bfe6ff', '#ffffff'];
     notes.forEach((n, i) => {
       const col = i % 6, row = Math.floor(i / 6);
       const x = 40 + col * 162 + r() * 14, y = 110 + row * 150 + r() * 16;
@@ -307,11 +312,11 @@ function build(models) {
 
   // right wall posters
   poster(1.2, 1.6, 512, (g, w, h) => {
-    g.fillStyle = '#7850ce'; g.fillRect(0, 0, w, h);
-    g.fillStyle = '#dcf68d'; g.font = '700 74px "Space Grotesk", sans-serif'; g.textAlign = 'left';
+    g.fillStyle = '#399aff'; g.fillRect(0, 0, w, h);
+    g.fillStyle = '#d2e7ff'; g.font = '700 74px "Space Grotesk", sans-serif'; g.textAlign = 'left';
     ['THINK.', 'BUILD.', 'PITCH.'].forEach((t, i) => g.fillText(t, 40, 150 + i * 96));
     g.fillStyle = '#ffffff'; hand(g, 46); g.fillText('little ideas,', 40, 520); g.fillText('big possibilities ✳', 40, 566);
-    g.strokeStyle = '#dcf68d'; g.lineWidth = 5; g.beginPath(); g.arc(380, 410, 44, 0, 7); g.stroke();
+    g.strokeStyle = '#d2e7ff'; g.lineWidth = 5; g.beginPath(); g.arc(380, 410, 44, 0, 7); g.stroke();
     g.beginPath(); g.moveTo(366, 456); g.lineTo(394, 456); g.moveTo(368, 470); g.lineTo(392, 470); g.stroke();
   }, W - 0.01, 2.2, -3.2, -Math.PI / 2);
   poster(1.5, 1.1, 512, (g, w, h) => {
@@ -328,9 +333,9 @@ function build(models) {
   box(frameM, 0.08, 2.35, 0.1, W - 0.03, 1.18, 4.1); box(frameM, 0.08, 2.35, 0.1, W - 0.03, 1.18, 5.3);
   addStatic(new THREE.SphereGeometry(0.04, 10, 8), mat('#d9c27a'), W - 0.1, 1.05, 4.28);
   poster(0.55, 0.75, 256, (g, w, h) => {
-    g.fillStyle = '#dcf68d'; g.fillRect(0, 0, w, h);
+    g.fillStyle = '#d2e7ff'; g.fillRect(0, 0, w, h);
     g.fillStyle = '#25251f'; g.font = '700 30px "Space Grotesk", sans-serif'; g.fillText('IDEATHON', 24, 66); g.fillText('2026', 24, 100);
-    g.font = '700 120px "Space Grotesk", sans-serif'; g.fillStyle = '#7850ce'; g.fillText('✳', 70, 270);
+    g.font = '700 120px "Space Grotesk", sans-serif'; g.fillStyle = '#399aff'; g.fillText('✳', 70, 270);
     hand(g, 30); g.fillStyle = '#25251f'; g.fillText('come in, curious', 22, 330);
   }, W - 0.08, 1.7, 4.7, -Math.PI / 2);
 
@@ -357,7 +362,7 @@ function build(models) {
 
   // bookshelf in the back left corner
   box(mat('#a87a52'), 0.45, 2.0, 1.6, -W + 0.25, 1.0, D - 1.3);
-  const bookColors = [C.purple, '#e46f53', C.lime, '#6fb6e9', '#f6c445', '#f2b8d0'];
+  const bookColors = [C.purple, '#e46f53', C.lime, '#6fb6e9', '#f6c445', '#0063c9'];
   for (let s = 0; s < 4; s++) {
     box(mat('#7d5434'), 0.42, 0.03, 1.55, -W + 0.28, 0.35 + s * 0.45, D - 1.3);
     let z = D - 2.02;
@@ -397,7 +402,6 @@ function build(models) {
     [[40, 40, 30, 22], [70, 80, 18, 26], [140, 46, 40, 20], [150, 86, 20, 18], [210, 90, 22, 12], [190, 36, 18, 14]].forEach(([x, y, a, b]) => { g.beginPath(); g.ellipse(x, y, a, b, 0, 0, 7); g.fill(); });
   });
   const globe = new THREE.Mesh(new THREE.SphereGeometry(0.15, 32, 24), surface({ map: globeTex, roughness: 0.35 }));
-  globe.castShadow = true;
   globe.position.set(TD.x + 0.5, 1.25, TD.z - 0.05);
   globe.rotation.z = 0.4;
   scene.add(globe);
@@ -448,7 +452,7 @@ function build(models) {
       const bx = cx + (rand() - .5) * 1.1;
       box(mat(pick(bookColors)), 0.22, 0.025, 0.3, bx, 0.78 + i * 0.001, z + (rand() - .5) * 0.15, (rand() - .5) * 0.6);
     }
-    if (n && rand() > .4) box(mat(pick(['#7850ce', '#e46f53', '#6fb6e9'])), 0.18, 0.035, 0.06, cx + (rand() - .5), 0.785, z - 0.15, (rand() - .5));
+    if (n && rand() > .4) box(mat(pick(['#399aff', '#e46f53', '#6fb6e9'])), 0.18, 0.035, 0.06, cx + (rand() - .5), 0.785, z - 0.15, (rand() - .5));
   }));
 
   // ---------- characters: rigged humans posed in code ----------
@@ -497,16 +501,21 @@ function build(models) {
   const dressed = new Map();
   function makeCharacter(gltf, palette, height) {
     const model = cloneSkinned(gltf.scene);
+    // the body parts of one character share a single skeleton (cloning gives each part its own copy)
+    let shared = null;
+    model.traverse(o => {
+      if (!o.isSkinnedMesh) return;
+      if (!shared) { shared = o.skeleton; return; }
+      if (o.skeleton.bones.length === shared.bones.length && o.skeleton.bones.every((b, i) => b === shared.bones[i])) o.bind(shared, o.bindMatrix);
+    });
     model.traverse(o => {
       if (!o.isMesh) return;
-      o.castShadow = o.receiveShadow = true;
-      o.frustumCulled = false;
+      o.castShadow = false;
+      o.receiveShadow = true;
       const color = palette[o.material.name];
       const key = o.material.uuid + (color || '');
       if (!dressed.has(key)) {
-        const m = o.material.clone();
-        if (color) m.color.set(color);
-        Object.assign(m, { roughness: 0.72, metalness: 0, envMapIntensity: 0.6, flatShading: false });
+        const m = new THREE.MeshLambertMaterial({ color: color || o.material.color, map: o.material.map });
         dressed.set(key, m);
       }
       o.material = dressed.get(key);
@@ -520,7 +529,11 @@ function build(models) {
     model.traverse(o => { if (o.isBone) bones[o.name] = o; });
     const side = {};
     ['L', 'R'].forEach(sd => { side[sd] = Math.sign(holder.worldToLocal(bones[`UpperArm${sd}`].getWorldPosition(new THREE.Vector3())).x) || 1; });
-    return { holder, model, bones, side };
+    // bones are recomputed and uploaded only after the pose changes (most students sit still most of the time)
+    const ch = { holder, model, bones, side, skeleton: shared, dirty: true };
+    const update = shared.update.bind(shared);
+    shared.update = () => { if (ch.dirty) { update(); ch.dirty = false; } };
+    return ch;
   }
 
   // seated pose targets
@@ -570,39 +583,40 @@ function build(models) {
     holder.updateMatrixWorld(true);
     const posed = ['Chest', 'Neck', 'Head', 'UpperArmL', 'LowerArmL', 'UpperArmR', 'LowerArmR'].map(n => [b[n], b[n].quaternion.clone()]);
     const raiseSide = rand() < 0.75 ? 'R' : 'L';
-    kids.push({
-      ...ch, seat, posed, raiseSide, phase: rand() * 10,
-      writer: rand() < 0.35, delay: rand() * 0.35,
+    // keep the same object: its skeleton.update() reads ch.dirty
+    kids.push(Object.assign(ch, {
+      seat, posed, raiseSide, phase: rand() * 10,
+      spare: rand(), delay: rand() * 0.35, // spare keeps the seeded seating identical
       hero: same(seat, HERO), bulb: same(seat, BULB),
       lookBack: LOOKBACK.some(r => same(r, seat)), eager: EAGER.some(r => same(r, seat)),
-      tmpU: new THREE.Vector3(), tmpL: new THREE.Vector3()
-    });
+      tmpU: new THREE.Vector3(), tmpL: new THREE.Vector3(), poseKey: ''
+    }));
   })));
 
-  function poseKid(k, yaw, pitch, raise, writing) {
+  function poseKid(k, headYaw, bodyYaw, pitch, raise) {
     k.posed.forEach(([bone, q]) => bone.quaternion.copy(q));
     k.holder.updateMatrixWorld(true);
     const b = k.bones, h = k.holder;
-    if (Math.abs(yaw) > 0.002) {
-      turn(h, b.Chest, UP, yaw * 0.3);
-      turn(h, b.Neck, UP, yaw * 0.4);
-      turn(h, b.Head, UP, yaw * 0.3);
+    if (Math.abs(bodyYaw) > 0.002) turn(h, b.Chest, UP, bodyYaw * 0.3);
+    if (Math.abs(headYaw) > 0.002) {
+      turn(h, b.Neck, UP, headYaw * 0.4);
+      turn(h, b.Head, UP, headYaw * 0.3);
     }
     if (Math.abs(pitch) > 0.002) turn(h, b.Head, RIGHT, pitch);
     if (raise > 0.002) {
       const sd = k.raiseSide, s = k.side[sd];
       aim(h, b[`UpperArm${sd}`], b[`LowerArm${sd}`], blendDir(k.tmpU, ARM_REST(s), ARM_UP(s), raise));
       aim(h, b[`LowerArm${sd}`], b[`Wrist${sd}`], blendDir(k.tmpL, FORE_REST(s), FORE_UP(s), raise));
-    } else if (writing) {
-      const s = k.side.R;
-      aim(h, b['LowerArmR'], b['WristR'], k.tmpL.copy(FORE_REST(s)).add(_a.set(writing, 0, writing * 0.5)).normalize());
     }
   }
 
   // teacher: real walk / idle / wave clips, with posed arms for writing, pointing and helping
-  const T = makeCharacter(models.teacher, { Black: '#553aa6', White: '#f6f2ea', Skin: '#a87450', Hair_Blond: '#17110d', Hair_Brown: '#17110d', Brown: '#2a1d16' }, 1.66);
+  const T = makeCharacter(models.teacher, { Black: '#1f5fae', White: '#f6f2ea', Skin: '#a87450', Hair_Blond: '#17110d', Hair_Brown: '#17110d', Brown: '#2a1d16' }, 1.66);
   const teacher = T.holder, tb = T.bones, sR = T.side.R;
   scene.add(teacher);
+  const teacherShadow = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.9), blobM);
+  teacherShadow.rotation.x = -Math.PI / 2;
+  scene.add(teacherShadow);
   const mixer = new THREE.AnimationMixer(T.model);
   const action = name => {
     const a = mixer.clipAction(THREE.AnimationClip.findByName(models.teacher.animations, `CharacterArmature|${name}`));
@@ -637,7 +651,7 @@ function build(models) {
   // ---------- idea bulbs ----------
   const haloTex = canvasTexture(128, 128, (g, w, h) => {
     const grd = g.createRadialGradient(w / 2, h / 2, 4, w / 2, h / 2, w / 2);
-    grd.addColorStop(0, 'rgba(255,246,190,1)'); grd.addColorStop(0.35, 'rgba(240,250,170,.45)'); grd.addColorStop(1, 'rgba(220,246,141,0)');
+    grd.addColorStop(0, 'rgba(255,246,190,1)'); grd.addColorStop(0.35, 'rgba(255,244,200,.45)'); grd.addColorStop(1, 'rgba(255,240,190,0)');
     g.fillStyle = grd; g.fillRect(0, 0, w, h);
   });
   function makeBulb() {
@@ -663,7 +677,6 @@ function build(models) {
   planeGeo.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, -0.22, -0.13, 0.02, 0.12, 0, -0.04, 0.12, 0, 0, -0.22, 0, -0.04, 0.12, 0.13, 0.02, 0.12], 3));
   planeGeo.computeVertexNormals();
   const paperPlane = new THREE.Mesh(planeGeo, surface({ color: '#ffffff', side: THREE.DoubleSide }));
-  paperPlane.castShadow = true;
   scene.add(paperPlane);
 
   // dust in the sunbeams
@@ -712,14 +725,14 @@ function build(models) {
     const spine = g.createLinearGradient(w / 2 - 30, 0, w / 2 + 30, 0);
     spine.addColorStop(0, 'rgba(0,0,0,0)'); spine.addColorStop(0.5, 'rgba(60,40,20,.22)'); spine.addColorStop(1, 'rgba(0,0,0,0)');
     g.fillStyle = spine; g.fillRect(w / 2 - 30, 0, 60, h);
-    g.fillStyle = '#7850ce'; hand(g, 54, 700); g.fillText('my big idea ✎', 90, 70);
+    g.fillStyle = '#399aff'; hand(g, 54, 700); g.fillText('my big idea ✎', 90, 70);
     // bulb doodle
     g.strokeStyle = '#25251f'; g.lineWidth = 4; g.lineCap = 'round';
     g.beginPath(); g.arc(250, 260, 70, Math.PI * 0.8, Math.PI * 2.2); g.stroke();
     g.beginPath(); g.moveTo(205, 312); g.quadraticCurveTo(222, 350, 224, 372); g.lineTo(276, 372); g.quadraticCurveTo(278, 350, 295, 312); g.stroke();
     g.beginPath(); g.moveTo(226, 392); g.lineTo(274, 392); g.moveTo(232, 410); g.lineTo(268, 410); g.stroke();
     for (let i = 0; i < 7; i++) { const a = -Math.PI * 0.95 + i * 0.32; g.beginPath(); g.moveTo(250 + Math.cos(a) * 92, 260 + Math.sin(a) * 92); g.lineTo(250 + Math.cos(a) * 118, 260 + Math.sin(a) * 118); g.stroke(); }
-    g.fillStyle = 'rgba(220,246,141,.6)'; g.beginPath(); g.arc(250, 260, 52, 0, 7); g.fill();
+    g.fillStyle = 'rgba(178,214,255,.65)'; g.beginPath(); g.arc(250, 260, 52, 0, 7); g.fill();
     g.fillStyle = '#3c3c36'; hand(g, 38);
     g.fillText('what if our school', 90, 498); g.fillText('could save rainwater?', 90, 540);
     g.fillText('ask: who needs it most?', 90, 582);
@@ -731,7 +744,7 @@ function build(models) {
       g.fillStyle = '#3c3c36'; hand(g, 46); g.fillText(item, 670, y);
       const t = clamp(ticks * 4 - i);
       if (t > 0) {
-        g.strokeStyle = '#7850ce'; g.lineWidth = 7; g.beginPath(); g.moveTo(610, y - 18);
+        g.strokeStyle = '#399aff'; g.lineWidth = 7; g.beginPath(); g.moveTo(610, y - 18);
         const mid = [622, y - 2], end = [662, y - 52];
         if (t < 0.4) g.lineTo(lerp(610, mid[0], t / 0.4), lerp(y - 18, mid[1], t / 0.4));
         else { g.lineTo(mid[0], mid[1]); g.lineTo(lerp(mid[0], end[0], (t - 0.4) / 0.6), lerp(mid[1], end[1], (t - 0.4) / 0.6)); }
@@ -742,7 +755,7 @@ function build(models) {
   }
 
   // ---------- chalk scenes for the blackboard ----------
-  const CHALK = '#f4f2e8', CHALK_LIME = '#e1f7a0', CHALK_PINK = '#f4c8de', CHALK_LILAC = '#d9cbff';
+  const CHALK = '#f4f6f8', CHALK_LIME = '#bfe0ff', CHALK_PINK = '#8fc8ff', CHALK_LILAC = '#d2e7ff';
   const boardBase = document.createElement('canvas');
   boardBase.width = 2048; boardBase.height = 820;
   (() => {
@@ -881,7 +894,8 @@ function build(models) {
   function resize() {
     const w = canvas.clientWidth, h = canvas.clientHeight;
     if (!w || !h) return;
-    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, isSmall() ? 1.5 : 1.75));
+    dpr = dprCap();
+    renderer.setPixelRatio(dpr);
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.fov = camera.aspect < 0.85 ? 62 : camera.aspect < 1.3 ? 52 : 42;
@@ -977,7 +991,13 @@ function build(models) {
   }
 
   let prevTeacher = new THREE.Vector3(-1.05, 0.18, -6.42), moving = 0, heading = 0;
+  const frustum = new THREE.Frustum(), viewProj = new THREE.Matrix4(), kidSphere = new THREE.Sphere(new THREE.Vector3(), 1.1);
+  // adaptive resolution: if frames stay slow, step the pixel ratio down (never back up mid-visit)
+  let slowFrames = 0, sampled = 0;
+  const PERF = new URLSearchParams(location.search).has('perf');
+  const perf = (window.__perf = { frames: 0, updateMs: 0, renderMs: 0, dpr: 0 });
   function renderFrame(now) {
+    const now0 = performance.now();
     raf = 0;
     const dt = Math.min(0.1, last ? (now - last) / 1000 : 0.016);
     last = now;
@@ -1002,7 +1022,6 @@ function build(models) {
     pointer.y += (pointer.ty - pointer.y) * 0.05;
     right.subVectors(camLook, camPos).cross(up).normalize();
     camPos.addScaledVector(right, pointer.x * 0.14).addScaledVector(up, -pointer.y * 0.08);
-    camPos.y += Math.sin(time * 0.6) * 0.012;
     camera.position.copy(camPos);
     camera.lookAt(camLook);
 
@@ -1025,6 +1044,7 @@ function build(models) {
     let facing = TT.r + (((heading - TT.r + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI) * moving;
     teacher.position.copy(tPos);
     teacher.rotation.y = facing;
+    teacherShadow.position.set(tPos.x, tPos.y + 0.012, tPos.z);
     const pose = w => (TT.a.pose === w ? 1 - smooth(TT.f) : 0) + (TT.b.pose === w ? smooth(TT.f) : 0);
     const still = 1 - moving;
     const wWrite = pose('write') * still, wPoint = pose('point') * still, wLean = pose('lean') * still, wCheer = pose('cheer') * still;
@@ -1047,23 +1067,29 @@ function build(models) {
     }
     chalk.visible = c < 3.6;
 
-    // students
+    // students (only the ones in view are re-posed)
+    camera.updateMatrixWorld();
+    viewProj.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+    frustum.setFromProjectionMatrix(viewProj);
     const handsUp = c > 5.2;
     kids.forEach(k => {
-      const t = time + k.phase;
-      let yaw = Math.sin(t * 0.35) * 0.22, pitch = Math.sin(t * 0.5) * 0.04;
+      kidSphere.center.set(k.seat.x, 0.95, k.seat.z);
+      if (!frustum.intersectsSphere(kidSphere)) return;
+      let yaw = 0, bodyYaw = 0, pitch = 0;
       // back benchers turn round to look at the camera
       if (k.lookBack) {
         const w = bell(c, 1, 0.75);
-        const toCam = Math.atan2(-(camPos.x - k.seat.x), -(camPos.z - k.seat.z));
-        yaw = lerp(yaw, clamp(toCam, -2.1, 2.1), w);
+        const toCam = clamp(Math.atan2(-(camPos.x - k.seat.x), -(camPos.z - k.seat.z)), -2.1, 2.1);
+        yaw = lerp(yaw, toCam, w);
+        bodyYaw = toCam * w;
       }
       // near the mentor, heads turn toward the teacher
       const dT = Math.hypot(tPos.x - k.seat.x, tPos.z - k.seat.z);
       if (dT < 2.4 && c > 3.4 && c < 5.6) {
         const w = bell(c, 4.5, 1.15) * (k.hero ? 1 : 0.7);
-        const toT = Math.atan2(-(tPos.x - k.seat.x), -(tPos.z - k.seat.z));
-        yaw = lerp(yaw, clamp(toT, -1.6, 1.6), w);
+        const toT = clamp(Math.atan2(-(tPos.x - k.seat.x), -(tPos.z - k.seat.z)), -1.6, 1.6);
+        yaw = lerp(yaw, toT, w);
+        bodyYaw = lerp(bodyYaw, toT, w);
       }
       if (k.hero) pitch = lerp(pitch, -0.5, bell(c, 5, 0.6));
       if (k.bulb) pitch = lerp(pitch, 0.18, bell(c, 2, 0.7));
@@ -1072,9 +1098,12 @@ function build(models) {
       if (k.eager) raise = Math.max(raise, bell(c, 3, 0.75));
       if (k.bulb) raise = Math.max(raise, bell(c, 2, 0.6) * 0.85);
       if (handsUp) raise = Math.max(raise, ramp(c, 5.3 + k.delay, 5.75 + k.delay));
-      if (raise > 0.6) raise += Math.sin(t * 6) * 0.04;
-      const writing = k.writer && raise < 0.05 ? Math.sin(t * 9) * 0.12 : 0;
-      poseKid(k, yaw, pitch, clamp(raise), writing);
+      raise = clamp(raise);
+      const key = `${yaw.toFixed(3)} ${bodyYaw.toFixed(3)} ${pitch.toFixed(3)} ${raise.toFixed(3)}`;
+      if (key === k.poseKey) return;
+      k.poseKey = key;
+      poseKid(k, yaw, bodyYaw, pitch, raise);
+      k.dirty = true;
     });
 
     // idea bulbs
@@ -1114,7 +1143,26 @@ function build(models) {
     minuteHand.rotation.z = -(c / LAST) * Math.PI * 2 * 1.5 - 0.6;
     hourHand.rotation.z = -(c / LAST) * Math.PI * 0.25 - 2.6;
 
+    const tRender = performance.now();
     renderer.render(scene, camera);
+    if (PERF) {
+      perf.frames++;
+      perf.updateMs += tRender - now0;
+      perf.renderMs += performance.now() - tRender;
+      perf.dpr = dpr;
+    }
+    if ((!SNAP || PERF) && last && dt < 0.1) {
+      sampled++;
+      if (dt > 1 / 40) slowFrames++;
+      if (sampled >= 90) {
+        if (slowFrames > 45 && dpr > 0.75) {
+          dpr = Math.max(0.75, dpr - 0.25);
+          renderer.setPixelRatio(dpr);
+          renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+        }
+        sampled = slowFrames = 0;
+      }
+    }
     if (firstFrame) {
       firstFrame = false;
       root.classList.remove('cr-pending');
@@ -1136,6 +1184,7 @@ function build(models) {
   document.addEventListener('visibilitychange', () => (document.hidden ? sleep() : wake()));
   new MutationObserver(wake).observe(root, { attributes: true, attributeFilter: ['class'] });
 
+  renderer.shadowMap.needsUpdate = true;
   resize();
   readScroll();
   progress = target;

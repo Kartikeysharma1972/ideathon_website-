@@ -1,35 +1,35 @@
 /* Supplied artwork, layered with the existing interactive effects. */
 .hero-art--illustrated{height:530px;perspective:1100px}
 .hero-sculpture{position:absolute;inset:-15px -22px 0;display:grid;place-items:center;z-index:1;animation:sculpture-float 7s ease-in-out infinite;pointer-events:none}
-.hero-sculpture img{display:block;width:100%;height:100%;object-fit:contain;min-height:0;filter:drop-shadow(0 20px 22px #63468e1b);transition:transform .35s ease-out;transform-style:preserve-3d}
-.hero-art--illustrated .purple-glow{width:100%;height:100%;top:0;background:radial-gradient(ellipse at 50% 48%,#c3a1ee42,transparent 65%)}
+.hero-sculpture img{display:block;width:100%;height:100%;object-fit:contain;min-height:0;filter:drop-shadow(0 20px 22px #46698e1b);transition:transform .35s ease-out;transform-style:preserve-3d}
+.hero-art--illustrated .purple-glow{width:100%;height:100%;top:0;background:radial-gradient(ellipse at 50% 48%,#96c6f942,transparent 65%)}
 .hero-art--illustrated .holo-ring{opacity:.52}.hero-art--illustrated .ring-offset{opacity:.28}
-.hero-art-note{position:absolute;top:0;left:9%;z-index:2;font-size:22px;color:#806994;rotate:-5deg;pointer-events:none}
+.hero-art-note{position:absolute;top:0;left:9%;z-index:2;font-size:22px;color:#697e94;rotate:-5deg;pointer-events:none}
 .hero-art-note>span{display:inline-block;font-size:30px;margin-left:8px;vertical-align:middle}
-.hero-art--illustrated .art-caption{bottom:-3px;left:0;right:0;text-align:center;transform:rotate(-3deg);font-size:21px;color:#806994}
+.hero-art--illustrated .art-caption{bottom:-3px;left:0;right:0;text-align:center;transform:rotate(-3deg);font-size:21px;color:#697e94}
 .round-image{height:210px;transform:none;position:relative;margin:8px 0 24px;isolation:isolate}
-.round-image:before{content:'';position:absolute;inset:15% 5%;border-radius:50%;background:radial-gradient(ellipse,#c7a7ef16,transparent 70%);z-index:-1}
+.round-image:before{content:'';position:absolute;inset:15% 5%;border-radius:50%;background:radial-gradient(ellipse,#9cc9fa16,transparent 70%);z-index:-1}
 .round-sprite-window{display:block;position:relative;width:210px;height:210px;overflow:hidden;flex:none;transition:transform .5s ease-out}
 .round-sprite-window img{display:block;position:absolute;top:0;left:0;width:300%;height:100%;max-width:none;object-fit:fill}
 .round-sprite--build img{left:-100%}.round-sprite--pitch img{left:-200%}
 .round-card:hover .round-sprite-window{transform:scale(1.045) rotate(-2deg)}
 .mentor-artwork{height:auto;display:block;mask-image:none;overflow:visible;background:none;margin:0;transform:none;position:relative;min-width:0}
-.mentor-artwork-frame{position:relative;padding:9px;background:#fffdf7;border:1px solid #d7cde1;border-radius:22px;box-shadow:0 18px 55px #6e458d14;overflow:hidden;rotate:-2deg}
+.mentor-artwork-frame{position:relative;padding:9px;background:#fcfeff;border:1px solid #d1d6dd;border-radius:22px;box-shadow:0 18px 55px #45688d14;overflow:hidden;rotate:-2deg}
 .mentor-artwork-frame img{display:block;width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;border-radius:14px;transition:transform .8s cubic-bezier(.2,.8,.2,1)}
 .mentor-artwork:hover .mentor-artwork-frame img{transform:scale(1.025)}
 .mentor-artwork figcaption{display:flex;flex-direction:column;align-items:center;padding-top:22px;gap:5px}
-.mentor-artwork figcaption .handwritten{font-size:25px;color:#806994;rotate:-3deg}
-.mentor-artwork figcaption>span:last-child{font-size:7px;letter-spacing:1.4px;color:#8c8197}
-.mentor-artwork-spark{position:absolute;top:-30px;right:-20px;font-size:65px;line-height:1;color:#9673c8;rotate:15deg;pointer-events:none}
-.video-placeholder--illustrated{isolation:isolate;background:#faf0e2;border-color:#ded1c4;box-shadow:0 20px 55px #7d5c3020}
+.mentor-artwork figcaption .handwritten{font-size:25px;color:#697e94;rotate:-3deg}
+.mentor-artwork figcaption>span:last-child{font-size:7px;letter-spacing:1.4px;color:#868b92}
+.mentor-artwork-spark{position:absolute;top:-30px;right:-20px;font-size:65px;line-height:1;color:#469bf5;rotate:15deg;pointer-events:none}
+.video-placeholder--illustrated{isolation:isolate;background:#eaeff6;border-color:#ded1c4;box-shadow:0 20px 55px #7d5c3020}
 .video-poster{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2}
 .video-placeholder--illustrated .video-grid{opacity:.07;z-index:-1}
-.video-placeholder--illustrated .video-center{padding:25px 32px;border-radius:22px;background:radial-gradient(ellipse,#fffaf1db 25%,#fffaf180 65%,transparent 75%);max-width:65%}
-.video-placeholder--illustrated .video-center h3{color:#3f2b53}
-.video-placeholder--illustrated .video-center p{color:#67566f;text-align:center}
-.video-placeholder--illustrated .video-play{background:#f8f2ffd9;border-color:#9676bd;color:#7952b0;box-shadow:0 0 0 9px #d4c3e94d,0 5px 25px #9970c730;backdrop-filter:blur(6px)}
-.video-placeholder--illustrated .video-center .pill{background:#f3ebf9e8;border-color:#c4afd8;color:#72538e}
-.video-placeholder--illustrated .video-corner,.video-placeholder--illustrated .video-bottom{color:#635270;font-weight:600;text-shadow:0 1px 8px #fff}
+.video-placeholder--illustrated .video-center{padding:25px 32px;border-radius:22px;background:radial-gradient(ellipse,#f8fbffdb 25%,#f8fbff80 65%,transparent 75%);max-width:65%}
+.video-placeholder--illustrated .video-center h3{color:#2b3e53}
+.video-placeholder--illustrated .video-center p{color:#5c6269;text-align:center}
+.video-placeholder--illustrated .video-play{background:#f9fcffd9;border-color:#7698bd;color:#107df2;box-shadow:0 0 0 9px #b1d5fb4d,0 5px 25px #4299f530;backdrop-filter:blur(6px)}
+.video-placeholder--illustrated .video-center .pill{background:#eff4fae8;border-color:#afc3d8;color:#53708e}
+.video-placeholder--illustrated .video-corner,.video-placeholder--illustrated .video-bottom{color:#526070;font-weight:600;text-shadow:0 1px 8px #fefefe}
 .video-placeholder--illustrated .video-corner{top:16px}.video-placeholder--illustrated .video-bottom{bottom:15px}
 .motion-paused [data-hero-object],.motion-paused .round-card:hover .round-sprite-window,.motion-paused .mentor-artwork:hover img{transform:none!important}
 @keyframes sculpture-float{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-12px) rotate(1deg)}}
