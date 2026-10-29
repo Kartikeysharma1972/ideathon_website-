@@ -800,7 +800,7 @@ function build(models) {
       text('hands up! ✋', 1290, 300, 120, CHALK_PINK, 700),
       doodle(1240, 560, 700, 120, g => { g.beginPath(); g.moveTo(1260, 650); g.bezierCurveTo(1450, 600, 1700, 690, 1920, 610); g.stroke(); }),
       text('count us in →', 1300, 610, 92, CHALK_LILAC),
-      text('teams of 3–4 · classes 6–12', 130, 720, 64)
+      text('teams of 2–5 · classes 6–8 & 9–12', 130, 720, 64)
     ]
   ];
   const sceneCanvases = scenes.map(items => {

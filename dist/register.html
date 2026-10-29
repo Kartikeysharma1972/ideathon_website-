@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#ffffff">
-  <meta name="description" content="Register your team for the MIIC × Codevidhya Ideathon 2026. Classes 6–12, teams of 3–4. Takes about 5 minutes.">
+  <meta name="description" content="Register your team for the MIIC × Codevidhya Ideathon 2026. Grades 6–8 and 9–12, teams of 2–5. Takes about 5 minutes.">
   <title>Register your team · Ideathon 2026</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,7 +26,7 @@
       <h1>Register your team in about <span class="text-purple">5 minutes.</span></h1>
       <p>No long essays. Just your team and your idea, even a rough one. You’ll polish it with an MNIT mentor in Round 2.</p>
       <ul class="reg-need">
-        <li><b>3–4 students</b> from classes 6–12</li>
+        <li><b>2–5 students</b> across grades 6–8 and 9–12</li>
         <li><b>A team name</b> (we can suggest one)</li>
         <li><b>A problem</b> you’d love to solve</li>
       </ul>
@@ -36,7 +36,7 @@
     <section class="reg-card" aria-labelledby="step-heading">
       <div class="reg-progress">
         <ol class="reg-steps" aria-label="Registration steps">
-          <li data-dot="0">Team</li><li data-dot="1">Members</li><li data-dot="2">Idea</li><li data-dot="3">Bonus</li><li data-dot="4">Review</li>
+          <li data-dot="0">Team</li><li data-dot="1">Members</li><li data-dot="2">Idea</li><li data-dot="3">Mock Test</li><li data-dot="4">Review</li>
         </ol>
         <div class="reg-bar" aria-hidden="true"><i></i></div>
       </div>
@@ -47,14 +47,14 @@
           <h2 class="step-title" tabindex="-1">Let’s start with your team</h2>
           <p class="step-sub">Pick a name that sounds like a startup.</p>
           <div class="field">
-            <label for="teamName">Team name</label>
+            <label for="teamName">Team Name</label>
             <div class="with-button">
               <input id="teamName" name="teamName" required maxlength="40" placeholder="e.g. VisionX, NextGen">
               <button type="button" class="ghost-btn" data-suggest>🎲 Suggest</button>
             </div>
           </div>
           <div class="field">
-            <label for="school">School name</label>
+            <label for="school">School Name</label>
             <input id="school" name="school" required maxlength="120" autocomplete="organization" placeholder="Your school’s full name">
           </div>
           <div class="field">
@@ -66,16 +66,16 @@
         <!-- 2. Members -->
         <div class="step" data-step="1" hidden>
           <h2 class="step-title" tabindex="-1">Who’s in the team?</h2>
-          <p class="step-sub">3 or 4 students. The first one is your <b>team captain</b>: we’ll contact them for all updates.</p>
+          <p class="step-sub">2 to 5 students. The first one is your <b>team captain</b>: we’ll contact them for all updates.</p>
           <div class="members"></div>
-          <button type="button" class="ghost-btn add-member" data-add-member>+ Add a 4th member</button>
+          <button type="button" class="ghost-btn add-member" data-add-member>+ Add another member</button>
           <p class="category-badge" aria-live="polite" hidden></p>
           <div class="contact-box">
             <h3>How can we reach your team?</h3>
             <p>Fill in at least one, ideally a parent’s or teacher’s. We only use it for Ideathon updates.</p>
             <div class="two-col">
               <div class="field" data-contact>
-                <label for="phone">WhatsApp number</label>
+                <label for="phone">WhatsApp Number</label>
                 <input id="phone" name="phone" type="tel" inputmode="numeric" maxlength="15" autocomplete="tel" placeholder="10-digit mobile">
               </div>
               <div class="field" data-contact>
@@ -114,70 +114,53 @@
             <input class="other-input" name="industryOther" maxlength="40" placeholder="Tell us the area" hidden>
           </fieldset>
           <div class="field">
-            <label for="problem">What problem are you solving?</label>
+            <label for="problem">What problem are you solving? <small>(optional)</small></label>
             <p class="hint"><span>Who faces it?</span><span>Why does it matter?</span><span>How often?</span></p>
-            <textarea id="problem" name="problem" required maxlength="300" rows="3" placeholder="e.g. Many students in our school forget to drink water and feel tired by afternoon." data-count></textarea>
+            <textarea id="problem" name="problem" maxlength="300" rows="3" placeholder="e.g. Many students in our school forget to drink water and feel tired by afternoon." data-count></textarea>
           </div>
-          <div class="field">
-            <label for="solution">How does your idea solve it?</label>
-            <p class="hint"><span>How it works</span><span>Main features</span><span>How people get it</span></p>
-            <textarea id="solution" name="solution" required maxlength="400" rows="3" placeholder="e.g. A smart bottle tag that beeps every hour and shows a progress light." data-count></textarea>
-          </div>
-          <fieldset class="field chips-field" data-required-group="audience">
-            <legend>Who will use it? <small>(pick any)</small></legend>
-            <div class="chips">
-              <label class="chip"><input type="checkbox" name="audience" value="Students"><span>Students</span></label>
-              <label class="chip"><input type="checkbox" name="audience" value="Teachers"><span>Teachers</span></label>
-              <label class="chip"><input type="checkbox" name="audience" value="Parents"><span>Parents</span></label>
-              <label class="chip"><input type="checkbox" name="audience" value="Farmers"><span>Farmers</span></label>
-              <label class="chip"><input type="checkbox" name="audience" value="Doctors / Patients"><span>Doctors / Patients</span></label>
-              <label class="chip"><input type="checkbox" name="audience" value="Small businesses"><span>Small businesses</span></label>
-              <label class="chip"><input type="checkbox" name="audience" value="Senior citizens"><span>Senior citizens</span></label>
-              <label class="chip"><input type="checkbox" name="audience" value="Women & girls"><span>Women &amp; girls</span></label>
-              <label class="chip"><input type="checkbox" name="audience" value="Everyone"><span>Everyone</span></label>
-            </div>
-          </fieldset>
         </div>
 
-        <!-- 4. Bonus (optional) -->
+        <!-- 4. Mock test (optional) -->
         <div class="step" data-step="3" hidden>
-          <h2 class="step-title" tabindex="-1">Bonus round <small>(optional)</small></h2>
-          <p class="step-sub">Skip it if you like. These quick taps help your mentor get started faster.</p>
-          <fieldset class="field chips-field">
-            <legend>What makes your idea special?</legend>
-            <div class="chips">
-              <label class="chip"><input type="checkbox" name="usp" value="Faster"><span>⚡ Faster</span></label>
-              <label class="chip"><input type="checkbox" name="usp" value="Cheaper"><span>💸 Cheaper</span></label>
-              <label class="chip"><input type="checkbox" name="usp" value="Smarter"><span>🧠 Smarter</span></label>
-              <label class="chip"><input type="checkbox" name="usp" value="Easier"><span>👌 Easier</span></label>
-              <label class="chip"><input type="checkbox" name="usp" value="Greener"><span>🌍 Greener</span></label>
-              <label class="chip"><input type="checkbox" name="usp" value="Safer"><span>🛡️ Safer</span></label>
+          <div class="mock-intro">
+            <h2 class="step-title" tabindex="-1">Would you like to take a mock test? <small>(optional)</small></h2>
+            <p class="step-sub">Round 1 is an online aptitude test. Try a short practice test now so you know what to expect. It is only for practice and does not affect your registration.</p>
+            <ul class="mock-facts">
+              <li><b>5</b><span>questions</span></li>
+              <li><b>5</b><span>minutes</span></li>
+              <li><b>Easy</b><span>level</span></li>
+            </ul>
+            <p class="mock-sections-label">One question from each section</p>
+            <div class="mock-sections"></div>
+            <div class="mock-choice">
+              <button type="button" class="button button-purple" data-mock-start>Yes, start the test <span>→</span></button>
+              <button type="button" class="ghost-btn" data-mock-skip>No, go to Review</button>
             </div>
-            <input name="uspLine" maxlength="150" placeholder="In one line, why is it better? (optional)" data-count>
-          </fieldset>
-          <fieldset class="field chips-field">
-            <legend>Does something similar already exist?</legend>
-            <div class="chips">
-              <label class="chip"><input type="radio" name="existing" value="Yes"><span>Yes</span></label>
-              <label class="chip"><input type="radio" name="existing" value="No"><span>No</span></label>
-              <label class="chip"><input type="radio" name="existing" value="Not sure"><span>Not sure</span></label>
+          </div>
+
+          <div class="mock-test" hidden>
+            <div class="mock-top">
+              <span class="mock-count" aria-live="polite"></span>
+              <span class="mock-timer" role="timer" aria-label="Time left">5:00</span>
             </div>
-          </fieldset>
-          <fieldset class="field chips-field">
-            <legend>How will it help people?</legend>
-            <div class="chips">
-              <label class="chip"><input type="checkbox" name="impact" value="Education"><span>Education</span></label>
-              <label class="chip"><input type="checkbox" name="impact" value="Health"><span>Health</span></label>
-              <label class="chip"><input type="checkbox" name="impact" value="Environment"><span>Environment</span></label>
-              <label class="chip"><input type="checkbox" name="impact" value="Jobs"><span>Jobs</span></label>
-              <label class="chip"><input type="checkbox" name="impact" value="Safety"><span>Safety</span></label>
-              <label class="chip"><input type="checkbox" name="impact" value="Accessibility"><span>Accessibility</span></label>
+            <div class="mock-track" aria-hidden="true"><i></i></div>
+            <div class="mock-q">
+              <span class="mock-tag"></span>
+              <p class="mock-question" id="mock-question"></p>
+              <div class="mock-options" role="radiogroup" aria-labelledby="mock-question"></div>
             </div>
-          </fieldset>
-          <div class="field">
-            <label for="link">Already have a deck or video? <small>(optional)</small></label>
-            <input id="link" name="link" type="url" maxlength="300" placeholder="Paste a Google Drive or YouTube link">
-            <p class="hint-plain">Not ready yet? No problem. You’ll share your idea report and pitch in Round 2.</p>
+            <div class="mock-nav">
+              <button type="button" class="ghost-btn" data-mock-prev>← Previous</button>
+              <button type="button" class="button button-purple" data-mock-next>Next question <span>→</span></button>
+            </div>
+          </div>
+
+          <div class="mock-result" hidden>
+            <h2 class="step-title" tabindex="-1">Mock test done!</h2>
+            <div class="mock-score"><b data-mock-score></b><span data-mock-msg></span></div>
+            <ol class="mock-review"></ol>
+            <p class="hint-plain">This was only practice. Your score is not used for selection.</p>
+            <button type="button" class="ghost-btn" data-mock-retry>↻ Try again</button>
           </div>
         </div>
 
@@ -195,7 +178,6 @@
         <p class="form-error" role="alert"></p>
         <div class="reg-nav">
           <button type="button" class="ghost-btn" data-back>← Back</button>
-          <button type="button" class="ghost-btn skip-btn" data-skip hidden>Skip</button>
           <button type="button" class="button button-purple" data-next>Next <span>→</span></button>
         </div>
       </form>
@@ -226,7 +208,7 @@
     <div class="member">
       <div class="member-head"><span class="member-no"></span><span class="member-role"></span><button type="button" class="member-remove" data-remove-member hidden>Remove</button></div>
       <div class="field">
-        <label>Full name</label>
+        <label>Full Name</label>
         <input data-k="name" maxlength="60" autocomplete="off" placeholder="Student’s name">
       </div>
       <fieldset class="field chips-field class-field">
@@ -241,10 +223,6 @@
           <label class="chip"><input type="radio" data-k="class" value="12"><span>12</span></label>
         </div>
       </fieldset>
-      <div class="field section-field">
-        <label>Section</label>
-        <input data-k="section" maxlength="4" autocomplete="off" placeholder="A">
-      </div>
     </div>
   </template>
 

@@ -5,16 +5,21 @@
  * Setup: see backend/SETUP.md.
  */
 const TEAM_HEADERS = [
-  'Registration ID', 'Submitted at', 'Team name', 'School', 'City', 'Category',
-  'Captain name', 'Captain class', 'Captain section',
-  'Student 2 name', 'Student 2 class', 'Student 2 section',
-  'Student 3 name', 'Student 3 class', 'Student 3 section',
-  'Student 4 name', 'Student 4 class', 'Student 4 section',
-  'WhatsApp', 'Email',
-  'Idea (one line)', 'Area', 'Problem', 'Solution', 'Who will use it',
-  'Special because', 'Special (one line)', 'Already exists?', 'Helps with', 'Deck / video link'
+  'Registration ID', 'Submitted at', 'Team Name', 'School Name', 'City', 'Category', 'Team size',
+  'Captain name', 'Captain class',
+  'Student 2 name', 'Student 2 class',
+  'Student 3 name', 'Student 3 class',
+  'Student 4 name', 'Student 4 class',
+  'Student 5 name', 'Student 5 class',
+  'WhatsApp Number', 'Email',
+  'Idea (one line)', 'Area', 'Problem (optional)',
+  'Mock test taken?', 'Mock test score', 'Mock test time'
 ];
-const MENTOR_HEADERS = ['Registration ID', 'Submitted at', 'Name', 'Email', 'WhatsApp', 'Branch & year', 'Can help with', 'Note'];
+const MENTOR_HEADERS = ['Registration ID', 'Submitted at', 'Full Name', 'Email', 'WhatsApp Number', 'Branch & Year', 'Can help with', 'Note', 'Profile file'];
+// uploaded mentor profiles (CV / resume) are saved in this Google Drive folder, created on first upload
+const PROFILE_FOLDER = 'Ideathon 2026 Mentor Profiles';
+const MAX_FILE_BYTES = 5 * 1024 * 1024;
+const FILE_TYPES = /\.(pdf|docx?|jpe?g|png)$/i;
 
 function doPost(e) {
   const lock = LockService.getScriptLock();
@@ -39,20 +44,34 @@ function doGet() {
 }
 
 function teamRow(id, d) {
-  const t = d.team || {}, c = d.contact || {}, i = d.idea || {}, b = d.bonus || {};
+  const t = d.team || {}, c = d.contact || {}, i = d.idea || {}, mt = d.mockTest || {};
   const m = d.members || [];
-  const member = n => [clean(m[n] && m[n].name), clean(m[n] && m[n].class), clean(m[n] && m[n].section)];
+  const member = n => [clean(m[n] && m[n].name), clean(m[n] && m[n].class)];
   return [
-    id, new Date(), clean(t.name), clean(t.school), clean(t.city), clean(t.category),
-    ...member(0), ...member(1), ...member(2), ...member(3),
+    id, new Date(), clean(t.name), clean(t.school), clean(t.city), clean(t.category), m.length,
+    ...member(0), ...member(1), ...member(2), ...member(3), ...member(4),
     clean(c.phone), clean(c.email),
-    clean(i.pitch), clean(i.industry), clean(i.problem), clean(i.solution), list(i.audience),
-    list(b.usp), clean(b.uspLine), clean(b.existing), list(b.impact), clean(b.link)
+    clean(i.pitch), clean(i.industry), clean(i.problem),
+    mt.taken ? 'Yes' : 'No', mt.taken ? clean(mt.score + ' / ' + mt.total) : '', mt.taken ? clean(mt.time) : ''
   ];
 }
 
 function mentorRow(id, d) {
-  return [id, new Date(), clean(d.name), clean(d.email), clean(d.phone), clean(d.program), list(d.areas), clean(d.note)];
+  return [id, new Date(), clean(d.name), clean(d.email), clean(d.phone), clean(d.program), list(d.areas), clean(d.note), saveProfile(id, d)];
+}
+
+// saves the optional CV / resume to Drive and returns its link (or a short reason it was skipped)
+function saveProfile(id, d) {
+  const f = d.profile;
+  if (!f || !f.data) return '';
+  if (!FILE_TYPES.test(String(f.name))) return 'Skipped: unsupported file type';
+  const bytes = Utilities.base64Decode(f.data);
+  if (bytes.length > MAX_FILE_BYTES) return 'Skipped: file over 5 MB';
+  const folders = DriveApp.getFoldersByName(PROFILE_FOLDER);
+  const folder = folders.hasNext() ? folders.next() : DriveApp.createFolder(PROFILE_FOLDER);
+  const safeName = (id + ' - ' + String(d.name || 'mentor') + ' - ' + String(f.name)).replace(/[\\/:*?"<>|]/g, '_').slice(0, 150);
+  const file = folder.createFile(Utilities.newBlob(bytes, String(f.type || 'application/octet-stream'), safeName));
+  return file.getUrl();
 }
 
 function sheetFor(name, headers) {
