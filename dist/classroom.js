@@ -774,8 +774,8 @@ function build(models) {
   const scenes = [
     [
       text("Today's lesson —", 130, 150, 76),
-      text('Little ideas.', 130, 345, 190, CHALK, 700),
-      text('Big possibilities.', 130, 545, 190, CHALK_LIME, 700),
+      text('Every classroom', 130, 345, 170, CHALK, 700),
+      text('has a future founder.', 130, 545, 150, CHALK_LIME, 700),
       doodle(1560, 120, 340, 420, g => {
         g.beginPath(); g.arc(1730, 300, 95, Math.PI * 0.78, Math.PI * 2.22); g.stroke();
         g.beginPath(); g.moveTo(1668, 372); g.quadraticCurveTo(1690, 420, 1692, 452); g.lineTo(1768, 452); g.quadraticCurveTo(1770, 420, 1792, 372); g.stroke();

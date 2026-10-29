@@ -248,9 +248,9 @@
   stage.addEventListener('pointerleave', () => { fieldPointer.targetX = 0; fieldPointer.targetY = 0; });
 
   const prompts = [
-    { question: 'What if learning could adapt to every learner?', hint: 'Think about a moment when a classmate needed a different way to understand something.' },
-    { question: 'What if everyday habits left a lighter footprint?', hint: 'Look at food, water or energy waste around your school. Where could a small change make a difference?' },
-    { question: 'What if your neighbourhood worked better for everyone?', hint: 'Explore a daily obstacle faced by someone with different needs. Start by listening to their experience.' }
+    { question: 'Why don’t some lessons click?', hint: 'Ask a classmate about a topic they never understood. Listen to what went wrong.' },
+    { question: 'Where does your lunch waste go?', hint: 'Follow one day of canteen leftovers to the final bin.' },
+    { question: 'Who struggles on your daily route?', hint: 'Walk to school with someone who finds it harder than you do.' }
   ];
   const sparkTabs = [...document.querySelectorAll('[data-spark]')];
   function selectSpark(tab) {

@@ -64,8 +64,8 @@
   window.matchMedia('(min-width: 701px)').addEventListener('change', event => { if (event.matches) closeMenu(); });
 
   const bandCopy = {
-    junior: { title: 'Classes 6–8.', description: 'Fresh eyes see new possibilities. Start with a problem around you and ask: could we make this better?', note: 'Curiosity has no minimum age.' },
-    senior: { title: 'Classes 9–12.', description: 'Take your curiosity further. Explore a real need, shape a practical solution and make a compelling case for your idea.', note: 'Your next chapter starts with an idea.' }
+    junior: { title: ['Young minds.', 'Big questions.'], description: 'Fresh eyes spot problems that grown-ups walk past. Pick one near you and ask if your team could make it better.', note: 'Curiosity has no minimum age.' },
+    senior: { title: ['Ready to build', 'something real.'], description: 'Take a problem you have seen up close, research it properly and shape it into a startup concept you can defend in front of judges.', note: 'Your next chapter starts with an idea.' }
   };
   const tabs = [...document.querySelectorAll('[data-band]')];
   const selectBand = tab => {
@@ -75,7 +75,7 @@
       item.tabIndex = selected ? 0 : -1;
     });
     const copy = bandCopy[tab.dataset.band];
-    document.getElementById('band-title').textContent = copy.title;
+    document.getElementById('band-title').replaceChildren(copy.title[0], document.createElement('br'), copy.title[1]);
     document.getElementById('band-description').textContent = copy.description;
     document.querySelector('.eligibility-card > .handwritten').textContent = copy.note;
     document.getElementById('band-panel').setAttribute('aria-labelledby', tab.id);
