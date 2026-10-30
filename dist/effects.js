@@ -39,7 +39,11 @@
     const a = u * 3;
     const lane = i % 3 * Math.PI * 2 / 3;
     const helix = { x: .67 * Math.cos(a + lane), y: (i / count - .5) * 2, z: .67 * Math.sin(a + lane) };
-    return { forms: [sphere, torus, helix], x: sphere.x, y: sphere.y, z: sphere.z };
+    const spin = Math.sqrt((i + .5) / count), arm = i * goldenAngle;
+    const galaxy = { x: spin * Math.cos(arm), y: Math.sin(i * 12.9898) * .06 * (1 - spin), z: spin * Math.sin(arm) };
+    const side = Math.ceil(Math.sqrt(count)), gx = (i % side) / (side - 1) * 2 - 1, gz = Math.floor(i / side) / (side - 1) * 2 - 1;
+    const wave = { x: gx * .95, y: .22 * Math.sin(gx * 4) * Math.cos(gz * 4), z: gz * .95 };
+    return { forms: [sphere, torus, helix, galaxy, wave], x: sphere.x, y: sphere.y, z: sphere.z };
   });
   let mode = 0;
   let morphing = false;
@@ -94,7 +98,7 @@
     ctx.clearRect(0, 0, w, h);
     const scale = Math.min(w, h) * .29;
     const rotation = paused ? .32 : time * .13 + fieldPointer.x * .65;
-    const tilt = -.2 + fieldPointer.y * .4 + (mode === 1 ? .6 : 0);
+    const tilt = -.2 + fieldPointer.y * .4 + (mode === 1 || mode >= 3 ? .6 : 0);
     const cy = Math.cos(rotation), sy = Math.sin(rotation), cx = Math.cos(tilt), sx = Math.sin(tilt);
     const glow = ctx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, scale * 1.5);
     glow.addColorStop(0, 'rgba(106,174,247,.09)'); glow.addColorStop(.65, 'rgba(42,140,244,.035)'); glow.addColorStop(1, 'rgba(10,97,190,0)');
@@ -249,8 +253,10 @@
 
   const prompts = [
     { question: 'Why don’t some lessons click?', hint: 'Ask a classmate about a topic they never understood. Listen to what went wrong.' },
+    { question: 'What makes it hard to stay healthy at school?', hint: 'Ask five classmates about their water, food and sleep. Look for the pattern.' },
     { question: 'Where does your lunch waste go?', hint: 'Follow one day of canteen leftovers to the final bin.' },
-    { question: 'Who struggles on your daily route?', hint: 'Walk to school with someone who finds it harder than you do.' }
+    { question: 'What do people in villages near you still find hard?', hint: 'Talk to a farmer or shopkeeper about the toughest part of their day.' },
+    { question: 'What small problem annoys you every day?', hint: 'Note three everyday frustrations this week. One of them could be your idea.' }
   ];
   const sparkTabs = [...document.querySelectorAll('[data-spark]')];
   function selectSpark(tab) {

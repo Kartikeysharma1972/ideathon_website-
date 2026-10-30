@@ -98,7 +98,7 @@
   // ---------- "Other" industry ----------
   const otherInput = form.querySelector('[name="industryOther"]');
   function syncOther() {
-    const isOther = form.querySelector('input[name="industry"]:checked')?.value === 'Other';
+    const isOther = !!form.querySelector('input[name="industry"][value="Other"]:checked');
     otherInput.hidden = !isOther;
     otherInput.required = isOther;
   }
@@ -163,8 +163,8 @@
     }
     if (n === 2) {
       need(form.pitch.closest('.field'), form.pitch.value.trim().length >= 8, 'Describe your idea in a few words.');
-      const ind = form.querySelector('input[name="industry"]:checked');
-      need(form.querySelector('[data-required-group="industry"]'), !!ind && (ind.value !== 'Other' || otherInput.value.trim()), ind ? 'Tell us the area.' : 'Pick the closest area.');
+      const areas = checked('industry');
+      need(form.querySelector('[data-required-group="industry"]'), areas.length > 0 && (!areas.includes('Other') || otherInput.value.trim()), areas.length ? 'Tell us the area.' : 'Pick at least one area.');
     }
     if (n === 4) need(form.consent.closest('.field'), form.consent.checked, 'Please tick this to submit.');
 
@@ -334,12 +334,12 @@
       if (!name) continue;
       members.push({ name, class: checked(`m${i}_class`)[0] || '', role: i === 1 ? 'Captain' : 'Member' });
     }
-    const industry = checked('industry')[0] || '';
+    const industry = checked('industry').map(a => a === 'Other' ? `Other: ${val('industryOther')}` : a).join(', ');
     return {
       team: { name: val('teamName'), school: val('school'), city: val('city'), category: category() },
       members,
       contact: { phone: val('phone'), email: val('email') },
-      idea: { pitch: val('pitch'), industry: industry === 'Other' ? `Other: ${val('industryOther')}` : industry, problem: val('problem') },
+      idea: { pitch: val('pitch'), industry, problem: val('problem') },
       mockTest: mock.summary()
     };
   }

@@ -20,3 +20,5 @@ dialog{border:1px solid #cad0d7;border-radius:15px;background:var(--paper);color
 
 
 .playbook-sub{margin-top:14px;font-size:15px;color:var(--muted)}
+
+.hero-eyebrow{font-size:12px;letter-spacing:1.6px;gap:10px}.hero-eyebrow .edition{font-size:10px;padding:4px 9px}@media (max-width:760px){.hero-eyebrow{font-size:10px;gap:8px}.hero-eyebrow .edition{font-size:8px}}
