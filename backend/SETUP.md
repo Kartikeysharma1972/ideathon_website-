@@ -17,7 +17,7 @@ It saves each one as a row in a Google Sheet: a **Teams** tab and a **Mentors** 
    ```js
    window.IDEATHON_FORMS_ENDPOINT = 'https://script.google.com/macros/s/XXXX/exec';
    ```
-7. Re-upload the website. The yellow "Preview mode" notes disappear.
+7. Re-upload the website. The "Preview mode" note after submitting disappears.
 
 ## Check it works
 
