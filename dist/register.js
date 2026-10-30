@@ -222,13 +222,24 @@
 
   // ---------- mock test (optional practice for the Round 1 aptitude test) ----------
   const MOCK_SECONDS = 5 * 60;
-  const QUESTIONS = [
-    { section: 'Logical Reasoning', q: 'What comes next in the series: 2, 4, 8, 16, ?', options: ['18', '24', '32', '30'], answer: 2 },
-    { section: 'Numerical Ability', q: 'One pencil costs ₹5. How much do 12 pencils cost?', options: ['₹50', '₹60', '₹55', '₹65'], answer: 1 },
-    { section: 'Verbal Ability', q: 'Which word means the opposite of “ancient”?', options: ['Old', 'Historic', 'Modern', 'Antique'], answer: 2 },
-    { section: 'Problem Solving', q: 'The school bus leaves at 7:30 am and takes 45 minutes to reach school. When does it reach?', options: ['8:00 am', '8:15 am', '8:30 am', '8:45 am'], answer: 1 },
-    { section: 'Innovation Thinking', q: 'What is the best first step when building a new idea?', options: ['Pick a cool name', 'Understand the problem people face', 'Buy expensive equipment', 'Copy a popular app'], answer: 1 }
-  ];
+  // two practice tests: Junior (classes 6–8) and Senior (classes 9–12)
+  const TESTS = {
+    junior: { label: 'Classes 6–8th', questions: [
+      { section: 'Logical Reasoning', q: 'What comes next in the series: 2, 4, 8, 16, ?', options: ['18', '24', '32', '30'], answer: 2 },
+      { section: 'Numerical Ability', q: 'One pencil costs ₹5. How much do 12 pencils cost?', options: ['₹50', '₹60', '₹55', '₹65'], answer: 1 },
+      { section: 'Verbal Ability', q: 'Which word means the opposite of “ancient”?', options: ['Old', 'Historic', 'Modern', 'Antique'], answer: 2 },
+      { section: 'Problem Solving', q: 'The school bus leaves at 7:30 am and takes 45 minutes to reach school. When does it reach?', options: ['8:00 am', '8:15 am', '8:30 am', '8:45 am'], answer: 1 },
+      { section: 'Innovation Thinking', q: 'What is the best first step when building a new idea?', options: ['Pick a cool name', 'Understand the problem people face', 'Buy expensive equipment', 'Copy a popular app'], answer: 1 }
+    ] },
+    senior: { label: 'Classes 9–12th', questions: [
+      { section: 'Logical Reasoning', q: 'What comes next in the series: 3, 9, 27, 81, ?', options: ['162', '243', '108', '324'], answer: 1 },
+      { section: 'Numerical Ability', q: 'A ₹450 bag is on sale at 20% off. How much do you pay?', options: ['₹360', '₹350', '₹380', '₹400'], answer: 0 },
+      { section: 'Verbal Ability', q: 'Which word is closest in meaning to “innovative”?', options: ['Traditional', 'Creative', 'Careless', 'Ordinary'], answer: 1 },
+      { section: 'Problem Solving', q: 'A train leaves at 9:40 am and the journey takes 2 hours 35 minutes. When does it arrive?', options: ['12:05 pm', '12:15 pm', '11:55 am', '12:25 pm'], answer: 1 },
+      { section: 'Innovation Thinking', q: 'A survey shows students skip breakfast because they are running late. Which idea tackles the real cause?', options: ['A poster about healthy food', 'Grab-and-go breakfast at the school gate', 'A cooking competition', 'A longer lunch break'], answer: 1 }
+    ] }
+  };
+  let QUESTIONS = TESTS.junior.questions;
   const mock = (() => {
     const step = steps[3];
     const intro = step.querySelector('.mock-intro');
@@ -240,7 +251,9 @@
     const prevBtn = step.querySelector('[data-mock-prev]');
     const qNextBtn = step.querySelector('[data-mock-next]');
     // state: 'choice' (not started or said no) | 'running' | 'done'
-    let state = 'choice', index = 0, answers = [], startedAt = 0, timeUsed = 0, tick;
+    let state = 'choice', index = 0, answers = [], startedAt = 0, timeUsed = 0, tick, level = 'junior';
+    const levelInputs = [...step.querySelectorAll('input[name="mockLevel"]')];
+    function setLevel(l) { level = TESTS[l] ? l : 'junior'; QUESTIONS = TESTS[level].questions; }
 
     step.querySelector('.mock-sections').innerHTML = QUESTIONS.map(q => `<span>${q.section}</span>`).join('');
     const fmt = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
@@ -252,6 +265,11 @@
       // the test has its own buttons; the main Next only appears once there is a result
       nextBtn.hidden = state !== 'done';
       backBtn.hidden = state === 'running';
+      // suggest the test that matches the team's classes until they pick one
+      if (state === 'choice' && !levelInputs.some(i => i.checked)) {
+        const c = classes();
+        levelInputs.find(i => i.value === (c.length && c.every(x => x >= 9) ? 'senior' : 'junior')).checked = true;
+      }
       if (state === 'running') renderQuestion();
       if (state === 'done') renderResult();
     }
@@ -269,6 +287,7 @@
     function renderResult() {
       const score = answers.filter((a, i) => a === QUESTIONS[i].answer).length;
       step.querySelector('[data-mock-score]').textContent = `${score} / ${QUESTIONS.length}`;
+      step.querySelector('[data-mock-level]').textContent = `${TESTS[level].label} test`;
       step.querySelector('[data-mock-msg]').textContent = `${score >= 4 ? 'Brilliant! You’re ready for Round 1.' : score >= 2 ? 'Good start! A little practice will help.' : 'Nice try! Practice makes perfect.'} Time taken: ${fmt(timeUsed)}`;
       step.querySelector('.mock-review').innerHTML = QUESTIONS.map((q, i) => {
         const ok = answers[i] === q.answer;
@@ -282,6 +301,7 @@
       if (left === 0) finish();
     }
     function start() {
+      setLevel(levelInputs.find(i => i.checked)?.value);
       state = 'running'; index = 0; answers = []; startedAt = Date.now();
       clearInterval(tick);
       tick = setInterval(updateTimer, 250);
@@ -311,14 +331,15 @@
       // leaving the step mid-test (e.g. tapping an earlier step) cancels the attempt
       leave() { if (state === 'running') { clearInterval(tick); state = 'choice'; } },
       summary: () => state === 'done'
-        ? { taken: true, score: answers.filter((a, i) => a === QUESTIONS[i].answer).length, total: QUESTIONS.length, time: fmt(timeUsed), seconds: timeUsed }
+        ? { taken: true, level: TESTS[level].label, score: answers.filter((a, i) => a === QUESTIONS[i].answer).length, total: QUESTIONS.length, time: fmt(timeUsed), seconds: timeUsed }
         : { taken: false },
       // only a finished test is kept in the draft; a half-done test starts over
-      saved: () => state === 'done' ? { answers, timeUsed } : null,
+      saved: () => state === 'done' ? { answers, timeUsed, level } : null,
       restore(data) {
         if (!data || !Array.isArray(data.answers)) return;
         answers = data.answers.map(a => (a == null ? undefined : +a));
         timeUsed = data.timeUsed | 0;
+        setLevel(data.level);
         state = 'done';
       }
     };
@@ -351,7 +372,7 @@
       block('Team', 0, row('Name', d.team.name) + row('School', d.team.school) + row('City', d.team.city)) +
       block('Members', 1, d.members.map((m, i) => row(i === 0 ? 'Captain' : `Student ${i + 1}`, `${m.name} · Class ${m.class}`)).join('') + row('Category', d.team.category) + row('Contact', [d.contact.phone, d.contact.email].filter(Boolean).join(' · '))) +
       block('Idea', 2, row('In one line', d.idea.pitch) + row('Area', d.idea.industry) + row('Problem', d.idea.problem)) +
-      block('Mock Test', 3, d.mockTest.taken ? row('Score', `${d.mockTest.score} / ${d.mockTest.total} in ${d.mockTest.time}`) : '<div class="rv-row"><dd class="rv-empty">Not taken. That’s fine, it was optional.</dd></div>');
+      block('Mock Test', 3, d.mockTest.taken ? row('Test', d.mockTest.level) + row('Score', `${d.mockTest.score} / ${d.mockTest.total} in ${d.mockTest.time}`) : '<div class="rv-row"><dd class="rv-empty">Not taken. That’s fine, it was optional.</dd></div>');
   }
   form.querySelector('.review').addEventListener('click', e => {
     const b = e.target.closest('[data-goto]');

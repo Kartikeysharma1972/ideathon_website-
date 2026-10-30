@@ -30,3 +30,4 @@ It saves each one as a row in a Google Sheet: a **Teams** tab and a **Mentors** 
 - Only people you share the Google Sheet with can see the data.
 - Mentor profile uploads (CV / resume, up to 5 MB) are saved in a Google Drive folder called **Ideathon 2026 Mentor Profiles** in the same Google account, and the **Mentors** tab gets a link to each file. That is why Google also asks for Drive permission during step 4.
 - Answers that start with `=`, `+`, `-` or `@` are stored as plain text so they can never run as spreadsheet formulas.
+- After each registration the script emails a thank-you note (student or mentor) from the Google account that owns the script. Google asks for "send email as you" permission during step 4. Before the test date is announced, fill in `TEST_DATE`, `TEST_TIME` and `CONTACT_PHONE` at the top of the script and publish a new version. A free Gmail account can send about 100 emails a day; a Google Workspace account about 1,500.

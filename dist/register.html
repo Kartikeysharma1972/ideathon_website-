@@ -128,8 +128,14 @@
             <ul class="mock-facts">
               <li><b>5</b><span>questions</span></li>
               <li><b>5</b><span>minutes</span></li>
-              
             </ul>
+            <fieldset class="mock-level">
+              <legend class="mock-sections-label">Pick your test</legend>
+              <div class="chips">
+                <label class="chip"><input type="radio" name="mockLevel" value="junior"><span>Classes 6–8th</span></label>
+                <label class="chip"><input type="radio" name="mockLevel" value="senior"><span>Classes 9–12th</span></label>
+              </div>
+            </fieldset>
             <p class="mock-sections-label">One question from each section</p>
             <div class="mock-sections"></div>
             <div class="mock-choice">
@@ -157,6 +163,7 @@
 
           <div class="mock-result" hidden>
             <h2 class="step-title" tabindex="-1">Mock test done!</h2>
+            <p class="mock-level-tag" data-mock-level></p>
             <div class="mock-score"><b data-mock-score></b><span data-mock-msg></span></div>
             <ol class="mock-review"></ol>
             <p class="hint-plain">This was only practice. Your score is not used for selection.</p>

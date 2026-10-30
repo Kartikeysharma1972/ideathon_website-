@@ -252,11 +252,11 @@
   stage.addEventListener('pointerleave', () => { fieldPointer.targetX = 0; fieldPointer.targetY = 0; });
 
   const prompts = [
-    { question: 'Why don’t some lessons click?', hint: 'Ask a classmate about a topic they never understood. Listen to what went wrong.' },
-    { question: 'What makes it hard to stay healthy at school?', hint: 'Ask five classmates about their water, food and sleep. Look for the pattern.' },
-    { question: 'Where does your lunch waste go?', hint: 'Follow one day of canteen leftovers to the final bin.' },
-    { question: 'What do people in villages near you still find hard?', hint: 'Talk to a farmer or shopkeeper about the toughest part of their day.' },
-    { question: 'What small problem annoys you every day?', hint: 'Note three everyday frustrations this week. One of them could be your idea.' }
+    { theme: 'Healthcare', question: 'How might we make a first consultation faster and easier to reach?', hint: 'Many people, especially older adults and those far from a hospital, lose hours to travel, queues and paperwork before they see a doctor. Many give up and delay treatment.' },
+    { theme: 'Rural Development', question: 'How might we bring one of those services closer to the people who need it?', hint: 'Villages often lack nearby services that towns take for granted, such as reliable transport, markets, clinics and internet. Families travel long distances for basic needs.' },
+    { theme: 'Education', question: 'How might we help every student understand a topic the first time, or catch up without feeling left behind?', hint: 'In every classroom, some students quietly fall behind because a lesson was explained in a way that did not work for them. They rarely get a second chance to learn it differently.' },
+    { theme: 'Sustainability', question: 'How might we cut the waste our school produces and give the rest a second life?', hint: 'Schools generate food waste every day, yet few students know where it goes or what it costs the environment. Much of it ends up in landfill, where it could have been reused.' },
+    { theme: 'Open Access', question: 'How might we make one useful resource open to the students who cannot use it today?', hint: 'Books, apps and websites are built for the majority, which leaves out students with disabilities, weak connectivity, language barriers or limited devices. They miss out on knowledge others use freely.' }
   ];
   const sparkTabs = [...document.querySelectorAll('[data-spark]')];
   function selectSpark(tab) {
@@ -264,6 +264,7 @@
     sparkTabs.forEach(item => { const selected = item === tab; item.setAttribute('aria-selected', String(selected)); item.tabIndex = selected ? 0 : -1; });
     const panel = document.getElementById('spark-panel');
     panel.setAttribute('aria-labelledby', tab.id);
+    document.getElementById('spark-theme').textContent = `PROBLEM STATEMENT · ${prompts[mode].theme.toUpperCase()}`;
     document.getElementById('spark-question').textContent = prompts[mode].question;
     document.getElementById('spark-hint').textContent = prompts[mode].hint;
     document.getElementById('field-id').textContent = `00${mode + 1}`;
