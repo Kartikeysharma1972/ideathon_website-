@@ -40,3 +40,19 @@
 
 
 .mentor-artwork-frame img{aspect-ratio:16/9}
+
+.round-sketch{width:100%;height:100%;fill:none;stroke:#dce9f8;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
+.round-sketch .rs-accent{stroke:#4aa3ff}
+.round-sketch text{stroke:none;font:700 26px var(--heading,sans-serif)}
+.round-sketch .rs-accent-fill{fill:#4aa3ff}
+.round-sketch .rs-small{font-size:9px}
+.round-sketch .rs-beam{stroke:none;fill:#4aa3ff;opacity:.12}
+.round-sketch .rs-float{animation:rs-float 3.2s ease-in-out infinite}
+.round-sketch .rs-glow{animation:rs-glow 2.4s ease-in-out infinite}
+.round-sketch .rs-pulse{animation:rs-glow 1.4s ease-in-out infinite}
+.round-sketch .rs-wave{transform-origin:176px 120px;animation:rs-wave 1.6s ease-in-out infinite}
+@keyframes rs-float{50%{transform:translateY(-5px)}}
+@keyframes rs-glow{50%{opacity:.35}}
+@keyframes rs-wave{50%{transform:rotate(14deg)}}
+@media(prefers-reduced-motion:reduce){.round-sketch *{animation:none!important}}
+.motion-paused .round-sketch *{animation:none!important}

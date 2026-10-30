@@ -31,8 +31,6 @@
   let current = 0;
   let memberCount = MIN_MEMBERS;
 
-  if (window.IdeathonForms?.isPreview()) document.querySelector('.reg-preview').hidden = false;
-
   // ---------- members ----------
   const tpl = document.getElementById('member-tpl');
   for (let i = 1; i <= MAX_MEMBERS; i++) {
@@ -148,18 +146,15 @@
       for (let i = 1; i <= memberCount; i++) {
         const m = memberNode(i);
         const name = m.querySelector(`[name="m${i}_name"]`);
-        const optionalEmpty = i > MIN_MEMBERS && !name.value.trim() && !form.querySelector(`input[name="m${i}_class"]:checked`);
+        const email = m.querySelector(`[name="m${i}_email"]`);
+        const optionalEmpty = i > MIN_MEMBERS && !name.value.trim() && !email.value.trim() && !form.querySelector(`input[name="m${i}_class"]:checked`);
         if (optionalEmpty) continue;
         need(name.closest('.field'), name.value.trim().length >= 2, i === 1 ? 'Add the captain’s name.' : `Add student ${i}’s name.`);
+        need(email.closest('.field'), emailOk(email.value.trim()), email.value.trim() ? 'That email doesn’t look right.' : 'Add their email (a parent’s is fine).');
         need(m.querySelector('.class-field'), !!form.querySelector(`input[name="m${i}_class"]:checked`), 'Tap their class.');
       }
-      const phone = form.phone.value.trim(), email = form.email.value.trim();
-      const contactField = form.phone.closest('.field');
-      if (!phone && !email) need(contactField, false, 'Add a WhatsApp number or an email.');
-      else {
-        if (phone) need(contactField, phoneOk(phone), 'That number looks short. Use 10 digits.');
-        if (email) need(form.email.closest('.field'), emailOk(email), 'That email doesn’t look right.');
-      }
+      const phone = form.phone.value.trim();
+      need(form.phone.closest('.field'), phoneOk(phone), phone ? 'That number looks short. Use 10 digits.' : 'Add a WhatsApp number.');
     }
     if (n === 2) {
       need(form.pitch.closest('.field'), form.pitch.value.trim().length >= 8, 'Describe your idea in a few words.');
@@ -180,7 +175,6 @@
   }
   form.addEventListener('input', e => {
     clearError(e.target.closest('.field'));
-    if (e.target.name === 'email' || e.target.name === 'phone') clearError(form.phone.closest('.field'));
     if (!form.querySelector('.is-invalid')) formError.textContent = '';
     if (e.target.name?.endsWith('_class')) updateBadge();
     if (e.target.name === 'industry') syncOther();
@@ -353,13 +347,13 @@
     for (let i = 1; i <= memberCount; i++) {
       const name = val(`m${i}_name`);
       if (!name) continue;
-      members.push({ name, class: checked(`m${i}_class`)[0] || '', role: i === 1 ? 'Captain' : 'Member' });
+      members.push({ name, email: val(`m${i}_email`), class: checked(`m${i}_class`)[0] || '', role: i === 1 ? 'Captain' : 'Member' });
     }
     const industry = checked('industry').map(a => a === 'Other' ? `Other: ${val('industryOther')}` : a).join(', ');
     return {
       team: { name: val('teamName'), school: val('school'), city: val('city'), category: category() },
       members,
-      contact: { phone: val('phone'), email: val('email') },
+      contact: { phone: val('phone') },
       idea: { pitch: val('pitch'), industry, problem: val('problem') },
       mockTest: mock.summary()
     };
@@ -370,7 +364,7 @@
     const block = (title, step, body) => `<section class="rv-block"><div class="rv-head"><h3>${title}</h3><button type="button" class="rv-edit" data-goto="${step}">Edit</button></div><dl>${body}</dl></section>`;
     form.querySelector('.review').innerHTML =
       block('Team', 0, row('Name', d.team.name) + row('School', d.team.school) + row('City', d.team.city)) +
-      block('Members', 1, d.members.map((m, i) => row(i === 0 ? 'Captain' : `Student ${i + 1}`, `${m.name} · Class ${m.class}`)).join('') + row('Category', d.team.category) + row('Contact', [d.contact.phone, d.contact.email].filter(Boolean).join(' · '))) +
+      block('Members', 1, d.members.map((m, i) => row(i === 0 ? 'Captain' : `Student ${i + 1}`, `${m.name} · Class ${m.class} · ${m.email}`)).join('') + row('Category', d.team.category) + row('WhatsApp', d.contact.phone)) +
       block('Idea', 2, row('In one line', d.idea.pitch) + row('Area', d.idea.industry) + row('Problem', d.idea.problem)) +
       block('Mock Test', 3, d.mockTest.taken ? row('Test', d.mockTest.level) + row('Score', `${d.mockTest.score} / ${d.mockTest.total} in ${d.mockTest.time}`) : '<div class="rv-row"><dd class="rv-empty">Not taken. That’s fine, it was optional.</dd></div>');
   }

@@ -7,12 +7,12 @@
  */
 const TEAM_HEADERS = [
   'Registration ID', 'Submitted at', 'Team Name', 'School Name', 'City', 'Category', 'Team size',
-  'Captain name', 'Captain class',
-  'Student 2 name', 'Student 2 class',
-  'Student 3 name', 'Student 3 class',
-  'Student 4 name', 'Student 4 class',
-  'Student 5 name', 'Student 5 class',
-  'WhatsApp Number', 'Email',
+  'Captain name', 'Captain class', 'Captain email',
+  'Student 2 name', 'Student 2 class', 'Student 2 email',
+  'Student 3 name', 'Student 3 class', 'Student 3 email',
+  'Student 4 name', 'Student 4 class', 'Student 4 email',
+  'Student 5 name', 'Student 5 class', 'Student 5 email',
+  'WhatsApp Number',
   'Idea (one line)', 'Area', 'Problem (optional)',
   'Mock test taken?', 'Mock test level', 'Mock test score', 'Mock test time'
 ];
@@ -51,11 +51,24 @@ function doPost(e) {
 
 // a failed email never fails the registration; the row is already saved
 function sendThankYou(isMentor, d) {
-  const to = String(isMentor ? d.email : (d.contact || {}).email || '').trim();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) return;
-  const name = String(isMentor ? d.name : ((d.members || [])[0] || {}).name || (d.team || {}).name || 'there').trim();
+  const people = isMentor ? [{ name: d.name, email: d.email }] : (d.members || []);
+  const sent = {};
+  people.forEach(function (p) {
+    const to = String(p.email || '').trim().toLowerCase();
+    // one email per address, even when a parent's email is shared by two students
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to) || sent[to]) return;
+    sent[to] = true;
+    const mail = thankYouMail(isMentor, String(p.name || 'there').trim());
+    try {
+      MailApp.sendEmail({ to: to, subject: mail.subject, name: SIGN_OFF, replyTo: CONTACT_EMAIL,
+        body: mail.body.concat(['Warm regards,\n' + SIGN_OFF]).join('\n\n') });
+    } catch (err) { /* daily email quota reached or mail not authorised */ }
+  });
+}
+
+function thankYouMail(isMentor, name) {
   const contact = CONTACT_EMAIL + (CONTACT_PHONE ? ' or call ' + CONTACT_PHONE : '');
-  const mail = isMentor ? {
+  return isMentor ? {
     subject: 'Thank you for registering as a mentor: Codevidhya x MNIT Ideathon',
     body: [
       'Hi ' + name + ',',
@@ -75,13 +88,6 @@ function sendThankYou(isMentor, d) {
       'See you at the test!'
     ]
   };
-  try {
-    MailApp.sendEmail({ to: to, subject: mail.subject, name: SIGN_OFF, replyTo: CONTACT_EMAIL,
-      body: mail.body.concat(['Warm regards,
-' + SIGN_OFF]).join('
-
-') });
-  } catch (err) { /* daily email quota reached or mail not authorised */ }
 }
 
 // lets you open the web app URL in a browser to check it is live
@@ -92,11 +98,11 @@ function doGet() {
 function teamRow(id, d) {
   const t = d.team || {}, c = d.contact || {}, i = d.idea || {}, mt = d.mockTest || {};
   const m = d.members || [];
-  const member = n => [clean(m[n] && m[n].name), clean(m[n] && m[n].class)];
+  const member = n => [clean(m[n] && m[n].name), clean(m[n] && m[n].class), clean(m[n] && m[n].email)];
   return [
     id, new Date(), clean(t.name), clean(t.school), clean(t.city), clean(t.category), m.length,
     ...member(0), ...member(1), ...member(2), ...member(3), ...member(4),
-    clean(c.phone), clean(c.email),
+    clean(c.phone),
     clean(i.pitch), clean(i.industry), clean(i.problem),
     mt.taken ? 'Yes' : 'No', mt.taken ? clean(mt.level) : '', mt.taken ? clean(mt.score + ' / ' + mt.total) : '', mt.taken ? clean(mt.time) : ''
   ];
