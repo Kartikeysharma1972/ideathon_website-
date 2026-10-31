@@ -131,7 +131,7 @@
 .mock-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
 .mock-count{font-size:13px;font-weight:650;color:var(--muted)}
 .mock-timer{font:600 20px var(--heading);font-variant-numeric:tabular-nums;padding:6px 14px;border-radius:999px;background:#e3f0ff;color:var(--purple-dark);transition:background .3s,color .3s}
-.mock-timer:before{content:'⏱ ';font-size:15px}
+.mock-timer:before{content:'⏱︎ ';font-size:15px}
 .mock-timer.is-low{background:#ffe7e7;color:#c2363b;animation:mock-pulse 1s ease-in-out infinite}
 @keyframes mock-pulse{50%{transform:scale(1.05)}}
 .mock-track{height:4px;border-radius:4px;background:#e8f0fa;overflow:hidden;margin-bottom:26px}

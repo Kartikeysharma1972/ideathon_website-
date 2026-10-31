@@ -189,7 +189,7 @@
     bar.style.transform = `scaleX(${(n + 1) / steps.length})`;
     backBtn.hidden = n === 0;
     nextBtn.hidden = false;
-    nextBtn.innerHTML = n === steps.length - 1 ? 'Submit registration <span>↗</span>' : `Next: ${LABELS[n + 1]} <span>→</span>`;
+    nextBtn.innerHTML = n === steps.length - 1 ? 'Submit registration <span>↗︎</span>' : `Next: ${LABELS[n + 1]} <span>→</span>`;
     formError.textContent = '';
     if (n === 3) mock.render(); else mock.leave();
     if (n === 4) renderReview();

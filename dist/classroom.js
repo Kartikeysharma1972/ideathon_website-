@@ -293,7 +293,7 @@ function build(models) {
     const r = rng(11);
     for (let i = 0; i < 900; i++) { g.fillStyle = `rgba(110,70,30,${r() * .18})`; g.fillRect(r() * w, r() * h, 2, 2); }
     g.fillStyle = '#25251f'; g.fillRect(w / 2 - 230, 18, 460, 62);
-    g.fillStyle = '#d2e7ff'; g.font = '700 40px "Space Grotesk", sans-serif'; g.textAlign = 'center'; g.fillText('OUR BIG IDEAS ✳', w / 2, 63);
+    g.fillStyle = '#d2e7ff'; g.font = '700 40px "Space Grotesk", sans-serif'; g.textAlign = 'center'; g.fillText('OUR BIG IDEAS ✦', w / 2, 63);
     const notes = ['solar bus stop', 'smart dustbin', 'app for lost pets', 'rain saver', 'quiz buddy', 'plant doctor', 'safe crossing', 'water alert', 'book swap', 'clean air map', 'kind canteen', 'what if…?'];
     const colors = ['#fff3a3', '#d2e7ff', '#d6e9ff', '#ffd1df', '#bfe6ff', '#ffffff'];
     notes.forEach((n, i) => {
@@ -316,7 +316,7 @@ function build(models) {
     g.fillStyle = '#399aff'; g.fillRect(0, 0, w, h);
     g.fillStyle = '#d2e7ff'; g.font = '700 74px "Space Grotesk", sans-serif'; g.textAlign = 'left';
     ['THINK.', 'BUILD.', 'PITCH.'].forEach((t, i) => g.fillText(t, 40, 150 + i * 96));
-    g.fillStyle = '#ffffff'; hand(g, 46); g.fillText('little ideas,', 40, 520); g.fillText('big possibilities ✳', 40, 566);
+    g.fillStyle = '#ffffff'; hand(g, 46); g.fillText('little ideas,', 40, 520); g.fillText('big possibilities ✦', 40, 566);
     g.strokeStyle = '#d2e7ff'; g.lineWidth = 5; g.beginPath(); g.arc(380, 410, 44, 0, 7); g.stroke();
     g.beginPath(); g.moveTo(366, 456); g.lineTo(394, 456); g.moveTo(368, 470); g.lineTo(392, 470); g.stroke();
   }, W - 0.01, 2.2, -3.2, -Math.PI / 2);
@@ -336,7 +336,7 @@ function build(models) {
   poster(0.55, 0.75, 256, (g, w, h) => {
     g.fillStyle = '#d2e7ff'; g.fillRect(0, 0, w, h);
     g.fillStyle = '#25251f'; g.font = '700 30px "Space Grotesk", sans-serif'; g.fillText('IDEATHON', 24, 66); g.fillText('2026', 24, 100);
-    g.font = '700 120px "Space Grotesk", sans-serif'; g.fillStyle = '#399aff'; g.fillText('✳', 70, 270);
+    g.font = '700 120px "Space Grotesk", sans-serif'; g.fillStyle = '#399aff'; g.fillText('✦', 70, 270);
     hand(g, 30); g.fillStyle = '#25251f'; g.fillText('come in, curious', 22, 330);
   }, W - 0.08, 1.7, 4.7, -Math.PI / 2);
 
