@@ -1,0 +1,23 @@
+# Speed settings for Apache (live.codevidhya.com). Upload this file with the rest of dist/.
+# Apache reads it only when the site's <Directory> allows overrides (see backend/SETUP.md → "Make the live site fast").
+# Every block is wrapped in <IfModule>, so a missing module is skipped instead of breaking the site.
+
+# compress text files and the 3D models (the models shrink by about half more)
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/plain application/javascript text/javascript application/json image/svg+xml model/gltf-binary
+</IfModule>
+
+# let browsers keep files: pages are re-checked on every visit, code for an hour, media for a week
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresDefault "access plus 1 hour"
+  ExpiresByType text/html "access plus 0 seconds"
+  ExpiresByType text/css "access plus 1 hour"
+  ExpiresByType application/javascript "access plus 1 hour"
+  ExpiresByType text/javascript "access plus 1 hour"
+  ExpiresByType model/gltf-binary "access plus 7 days"
+  ExpiresByType image/jpeg "access plus 7 days"
+  ExpiresByType image/png "access plus 7 days"
+  ExpiresByType image/svg+xml "access plus 7 days"
+  ExpiresByType video/mp4 "access plus 7 days"
+</IfModule>

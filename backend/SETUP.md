@@ -31,3 +31,22 @@ It saves each one as a row in a Google Sheet: a **Teams** tab and a **Mentors** 
 - Mentor profile uploads (CV / resume, up to 5 MB) are saved in a Google Drive folder called **Ideathon 2026 Mentor Profiles** in the same Google account, and the **Mentors** tab gets a link to each file. That is why Google also asks for Drive permission during step 4.
 - Answers that start with `=`, `+`, `-` or `@` are stored as plain text so they can never run as spreadsheet formulas.
 - After each registration the script emails a thank-you note (student or mentor) from the Google account that owns the script. Google asks for "send email as you" permission during step 4. Before the test date is announced, fill in `TEST_DATE`, `TEST_TIME` and `CONTACT_PHONE` at the top of the script and publish a new version. A free Gmail account can send about 100 emails a day; a Google Workspace account about 1,500.
+
+## Make the live site fast (for the server admin)
+
+The 3D models are already compressed (about 1.9 MB in total). Three server settings make the site faster still:
+
+1. **Allow `dist/.htaccess`.** It turns on gzip for the 3D models and browser caching. In the site's Apache config set `AllowOverride FileInfo Indexes` (or `All`) for the site folder, then enable the modules and reload:
+   ```bash
+   sudo a2enmod deflate expires headers
+   sudo systemctl reload apache2
+   ```
+   Make sure `.htaccess` is uploaded too (it is a hidden file, so some upload tools skip it).
+2. **Turn on HTTP/2** so the browser downloads all files over one connection:
+   ```bash
+   sudo a2enmod http2
+   # in the site's <VirtualHost *:443> add:  Protocols h2 http/1.1
+   sudo systemctl reload apache2
+   ```
+   (HTTP/2 needs Apache's `mpm_event`. If the server uses `mpm_prefork` with mod_php, check before switching.)
+3. **Check it:** `curl -sI -H "Accept-Encoding: gzip" https://live.codevidhya.com/assets/models/teacher.glb` should show `Content-Encoding: gzip` and an `Expires` header, and `curl -sI --http2 https://live.codevidhya.com/` should start with `HTTP/2 200`.

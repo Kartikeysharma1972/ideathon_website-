@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 
 const root = document.documentElement;
@@ -45,7 +46,7 @@ const MODEL_FILES = { boy: 'student-boy', boySweater: 'student-boy-sweater', gir
 let renderer;
 try {
   renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-  const loader = new GLTFLoader();
+  const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
   const entries = await Promise.all(Object.entries(MODEL_FILES).map(async ([key, file]) => [key, await loader.loadAsync(`assets/models/${file}.glb`)]));
   build(Object.fromEntries(entries));
 } catch (error) {
