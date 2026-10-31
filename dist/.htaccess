@@ -21,3 +21,10 @@
   ExpiresByType image/svg+xml "access plus 7 days"
   ExpiresByType video/mp4 "access plus 7 days"
 </IfModule>
+
+# pages are always re-checked, so phones pick up new ?v= file links right after an upload
+<IfModule mod_headers.c>
+  <FilesMatch "\.html?$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>
