@@ -30,3 +30,6 @@ dialog{border:1px solid #cad0d7;border-radius:15px;background:var(--paper);color
 .brand-name{display:inline!important;white-space:nowrap;font:700 21px/1 var(--heading);letter-spacing:-.6px}.brand-name i{font-style:normal;color:var(--purple);font-weight:500;margin:0 2px}.brand-name b{color:var(--purple)}
 @media(max-width:700px){.brand-name{font-size:15px;letter-spacing:-.3px}}
 @media(max-width:380px){.brand-name{font-size:13px}}
+/* the header stays at the top while the page scrolls; its frosted backdrop spans the full window width */
+.header{position:sticky;top:0;z-index:40}.header::before{content:'';position:absolute;inset:0 calc(50% - 50vw);z-index:-1;background:#ffffffe8;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+@media(max-width:700px){html{scroll-padding-top:90px}}
