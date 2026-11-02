@@ -196,3 +196,62 @@ html.pencil-on,html.pencil-on *{cursor:none!important}
 
 .mock-level{border:0;padding:0;margin:0 0 22px;min-width:0}
 .mock-level-tag{display:inline-block;margin-top:8px;font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:#eef5ff;color:#3a6aa6}
+
+/* how you are joining: individual innovator or a team */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.join-type{margin-bottom:26px}
+.join-cards{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.join-card{position:relative;display:flex}
+.join-card input{position:absolute;opacity:0;inset:0;margin:0}
+.join-card>span{flex:1;display:grid;justify-items:start;gap:4px;padding:20px 20px 18px;border:1.5px solid #d3e1f1;border-radius:16px;background:#fbfdff;transition:border-color .15s,background .15s,box-shadow .15s,transform .15s;user-select:none}
+.join-card svg{width:34px;height:34px;fill:none;stroke:var(--purple-dark);stroke-width:2.6;stroke-linecap:round;margin-bottom:8px}
+.join-card b{font:600 17px var(--heading);letter-spacing:-.3px;color:var(--ink)}
+.join-card small{font-size:13px;color:var(--muted)}
+.join-card:hover>span{border-color:var(--purple)}
+.join-card input:checked+span{border-color:var(--purple);background:#eef6ff;box-shadow:0 0 0 4px #399aff26}
+.join-card input:checked+span:after{content:'✓';position:absolute;top:14px;right:14px;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--purple);color:#fff;font-size:13px;font-weight:700}
+.join-card input:active+span{transform:scale(.98)}
+.join-card input:focus-visible+span{outline:3px solid #399aff66;outline-offset:2px}
+.is-invalid .join-card>span{border-color:#f0a3a5}
+.join-fields{animation:step-in .35s ease}
+
+/* city search */
+.combo{position:relative}
+.combo input{padding-right:40px!important}
+.combo-caret{position:absolute;right:6px;top:50%;width:32px;height:32px;transform:translateY(-50%);cursor:pointer}
+.combo-caret:before{content:'';position:absolute;left:12px;top:10px;width:7px;height:7px;border:solid #7d8ba0;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.combo-list{position:absolute;z-index:20;left:0;right:0;top:calc(100% + 6px);max-height:260px;overflow:auto;list-style:none;margin:0;padding:6px;background:#fff;border:1px solid #d3e1f1;border-radius:12px;box-shadow:0 18px 40px -18px #0f2a5a59}
+.combo-list li{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 12px;border-radius:8px;font-size:15px;cursor:pointer}
+.combo-list li small{font-size:12px;color:var(--muted);text-align:right}
+.combo-list li:hover,.combo-list li.is-active{background:#eef6ff}
+.combo-list .is-custom{border-top:1px dashed #d3e1f1;border-radius:0 0 8px 8px;color:var(--purple-dark);font-weight:600}
+.combo-list .combo-empty{color:var(--muted);cursor:default}
+
+/* +91 mobile number */
+.phone-input{display:flex;align-items:stretch}
+.phone-input>span{display:grid;place-items:center;padding:0 14px;border:1.5px solid #d3e1f1;border-right:0;border-radius:12px 0 0 12px;background:#eef5ff;font-weight:600;color:var(--ink)}
+.reg-card .phone-input input{border-radius:0 12px 12px 0;letter-spacing:.5px}
+.is-invalid .phone-input>span{border-color:#e5484d}
+
+/* your own domains */
+.custom-chips{display:contents}
+.chip-custom i{font-style:normal;opacity:.8;margin-left:4px}
+.other-row{display:flex;gap:10px;margin-top:12px}
+
+/* required policy before submitting */
+.policy{gap:10px;padding:16px;border-radius:14px;background:#f6faff;font-size:14px}
+.policy p{margin:0;font-size:14px;color:var(--ink)}
+.policy a{color:var(--purple-dark);font-weight:600;text-decoration:underline;text-underline-offset:3px}
+.policy-check{display:flex;gap:10px;align-items:flex-start;font-weight:500;line-height:1.5;padding-left:4px}
+.policy-check input{width:18px;height:18px;margin-top:2px;accent-color:var(--purple);flex:none}
+
+.done-buddy{max-width:460px;margin:16px auto 0;padding:12px 16px;border-radius:12px;background:#e9f9ef;color:#1f6b3b;font-size:14px}
+
+@media (max-width:620px){
+  .join-cards{grid-template-columns:1fr 1fr;gap:10px}
+  .join-card>span{padding:16px 14px 14px}
+  .join-card b{font-size:15px}
+  .join-card small{font-size:12px}
+  .join-card input:checked+span:after{top:10px;right:10px;width:20px;height:20px;font-size:11px}
+}
+.rv-row:has(.rv-empty){grid-template-columns:1fr}

@@ -1,19 +1,20 @@
 /**
  * Ideathon 2026 registrations → Google Sheet.
- * Receives team and mentor registrations from the website (forms.js) and appends one row each
+ * Receives student registrations (individual or team) and mentor registrations from the website (forms.js) and appends one row each
  * to the "Teams" or "Mentors" tab of the spreadsheet this script is bound to,
  * then emails a thank-you note to the address they gave.
  * Setup: see backend/SETUP.md.
  */
 const TEAM_HEADERS = [
-  'Registration ID', 'Submitted at', 'Team Name', 'School Name', 'City', 'Category', 'Team size',
-  'Captain name', 'Captain class', 'Captain email',
-  'Student 2 name', 'Student 2 class', 'Student 2 email',
-  'Student 3 name', 'Student 3 class', 'Student 3 email',
-  'Student 4 name', 'Student 4 class', 'Student 4 email',
-  'Student 5 name', 'Student 5 class', 'Student 5 email',
-  'WhatsApp Number',
-  'Idea (one line)', 'Area', 'Problem (optional)',
+  'Registration ID', 'Submitted at', 'Registration type', 'Team Name', 'School Name', 'City', 'Category', 'Team size',
+  'Captain / student name', 'Captain / student grade', 'Captain / student email',
+  'Student 2 name', 'Student 2 grade', 'Student 2 email',
+  'Student 3 name', 'Student 3 grade', 'Student 3 email',
+  'Student 4 name', 'Student 4 grade', 'Student 4 email',
+  'Student 5 name', 'Student 5 grade', 'Student 5 email',
+  'Student 6 name', 'Student 6 grade', 'Student 6 email',
+  'Contact Number',
+  'Idea (one line)', 'Domain', 'Problem (optional)',
   'Mock test taken?', 'Mock test level', 'Mock test score', 'Mock test time'
 ];
 const MENTOR_HEADERS = ['Registration ID', 'Submitted at', 'Full Name', 'Email', 'WhatsApp Number', 'Branch & Year', 'Can help with', 'Note', 'Profile file'];
@@ -100,8 +101,8 @@ function teamRow(id, d) {
   const m = d.members || [];
   const member = n => [clean(m[n] && m[n].name), clean(m[n] && m[n].class), clean(m[n] && m[n].email)];
   return [
-    id, new Date(), clean(t.name), clean(t.school), clean(t.city), clean(t.category), m.length,
-    ...member(0), ...member(1), ...member(2), ...member(3), ...member(4),
+    id, new Date(), clean(d.registrationType || 'Team'), clean(t.name), clean(t.school), clean(t.city), clean(t.category), m.length,
+    ...member(0), ...member(1), ...member(2), ...member(3), ...member(4), ...member(5),
     clean(c.phone),
     clean(i.pitch), clean(i.industry), clean(i.problem),
     mt.taken ? 'Yes' : 'No', mt.taken ? clean(mt.level) : '', mt.taken ? clean(mt.score + ' / ' + mt.total) : '', mt.taken ? clean(mt.time) : ''
@@ -133,8 +134,11 @@ function sheetFor(name, headers) {
     sheet = book.insertSheet(name);
     sheet.appendRow(headers);
     sheet.setFrozenRows(1);
-    sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold').setBackground('#e3f0ff');
   }
+  // when the form gains new questions, the header row is brought up to date
+  const top = sheet.getRange(1, 1, 1, headers.length);
+  if (top.getValues()[0].join('|') !== headers.join('|')) top.setValues([headers]);
+  top.setFontWeight('bold').setBackground('#e3f0ff');
   return sheet;
 }
 

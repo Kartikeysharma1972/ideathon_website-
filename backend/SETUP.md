@@ -1,7 +1,7 @@
 # Connect the registration forms to a Google Sheet (about 5 minutes, free)
 
-Team registrations (`register.html`) and mentor registrations (home page) are sent to one Google Apps Script.
-It saves each one as a row in a Google Sheet: a **Teams** tab and a **Mentors** tab, created automatically.
+Student registrations (`register.html`, individual or team) and mentor registrations (home page) are sent to one Google Apps Script.
+It saves each one as a row in a Google Sheet: a **Teams** tab (individuals and teams, with a "Registration type" column) and a **Mentors** tab, created automatically. When the form gains new questions, the script updates the header row by itself.
 
 ## Steps
 
@@ -22,7 +22,7 @@ It saves each one as a row in a Google Sheet: a **Teams** tab and a **Mentors** 
 ## Check it works
 
 - Open the Web app URL in a browser. It should show `{"ok":true,"service":"Ideathon 2026 registrations"}`.
-- Submit a test team on `register.html`. A new row appears in the **Teams** tab, and its Registration ID (e.g. `IDT26-0001`) matches the one shown on the success screen.
+- Submit a test registration on `register.html`. A new row appears in the **Teams** tab, and its Registration ID (e.g. `IDT26-0001`) matches the one shown on the success screen.
 
 ## Notes
 

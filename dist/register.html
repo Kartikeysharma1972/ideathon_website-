@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#ffffff">
-  <meta name="description" content="Register your team for the MIIC × Codevidhya Ideathon 2026. Across grades 6–8th / 9–12th, teams of 2–5. Takes about 5 minutes.">
-  <title>Register your team · Ideathon 2026</title>
+  <meta name="description" content="Register for the MIIC × Codevidhya Ideathon 2026 as an individual innovator or as a team of up to 6. Grades 6–8th / 9–12th. Takes about 5 minutes.">
+  <title>Register · Ideathon 2026</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;450;500;550;600;650;700&family=Space+Grotesk:wght@400;500;600;700&family=Caveat:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20261031b"><link rel="stylesheet" href="register.css?v=20261031b">
-  <script src="forms-config.js?v=20261031b"></script><script src="forms.js?v=20261031b" defer></script><script src="register.js?v=20261031b" defer></script>
+  <link rel="stylesheet" href="styles.css?v=20261102"><link rel="stylesheet" href="register.css?v=20261102">
+  <script src="forms-config.js?v=20261102"></script><script src="cities.js?v=20261102" defer></script><script src="forms.js?v=20261102" defer></script><script src="register.js?v=20261102" defer></script>
 </head>
 <body class="reg-body">
   <a class="skip-link" href="#reg-form">Skip to the form</a>
@@ -22,12 +22,12 @@
   <main class="reg-shell">
     <aside class="reg-side">
       <span class="eyebrow">MIIC × CODEVIDHYA · IDEATHON 2026</span>
-      <h1>Register your team in about <span class="text-purple">5 minutes.</span></h1>
-      <p>No long essays. Just your team and your idea, even a rough one. You’ll polish it with an MNIT mentor in Round 2.</p>
+      <h1>Register in about <span class="text-purple">5 minutes.</span></h1>
+      <p>No long essays. Just a few details and your idea, even a rough one. You’ll polish it with an MNIT mentor in Round 2.</p>
       <ul class="reg-need">
-        <li><b>2–5 students</b> across grades 6–8th / 9–12th</li>
-        <li><b>A team name</b> (we can suggest one)</li>
-        <li><b>A problem</b> you’d love to solve</li>
+        <li><span><b>On your own or as a team</b> of up to 6 students</span></li>
+        <li><b>Grades 6–8th / 9–12th</b></li>
+        <li><span><b>A problem</b> you’d love to solve</span></li>
       </ul>
       <p class="reg-note">Your answers are saved on this device as you type, so you can come back anytime.</p>
     </aside>
@@ -35,76 +35,106 @@
     <section class="reg-card" aria-labelledby="step-heading">
       <div class="reg-progress">
         <ol class="reg-steps" aria-label="Registration steps">
-          <li data-dot="0">Team</li><li data-dot="1">Members</li><li data-dot="2">Idea</li><li data-dot="3">Mock Test</li><li data-dot="4">Review</li>
+          <li data-dot="0">Basic Details</li><li data-dot="1">Idea</li><li data-dot="2">Mock Test</li><li data-dot="3">Review</li>
         </ol>
         <div class="reg-bar" aria-hidden="true"><i></i></div>
       </div>
 
       <form id="reg-form" novalidate>
-        <!-- 1. Team -->
+        <!-- 1. Basic details -->
         <div class="step" data-step="0">
-          <h2 class="step-title" tabindex="-1">Let’s start with your team</h2>
-          <p class="step-sub">Pick a name that sounds like a startup.</p>
-          <div class="field">
-            <label for="teamName">Team Name</label>
-            <div class="with-button">
-              <input id="teamName" name="teamName" required maxlength="40" placeholder="e.g. VisionX, NextGen">
-              <button type="button" class="ghost-btn" data-suggest>🎲 Suggest</button>
+          <h2 class="step-title" tabindex="-1">Basic details</h2>
+          <p class="step-sub">First, tell us how you are joining.</p>
+          <fieldset class="field join-type" data-join-field>
+            <legend class="sr-only">How are you joining?</legend>
+            <div class="join-cards">
+              <label class="join-card">
+                <input type="radio" name="joinType" value="individual">
+                <span>
+                  <svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="16" r="8"/><path d="M9 41c1.5-8.5 7.6-13 15-13s13.5 4.5 15 13"/></svg>
+                  <b>Individual innovator</b>
+                  <small>I am joining on my own</small>
+                </span>
+              </label>
+              <label class="join-card">
+                <input type="radio" name="joinType" value="team">
+                <span>
+                  <svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="17" cy="17" r="6.5"/><circle cx="33" cy="17" r="6.5"/><path d="M4 40c1.2-7 6-10.5 13-10.5S28.8 33 30 40"/><path d="M27.5 31c1.7-1 3.5-1.5 5.5-1.5 7 0 11.8 3.5 13 10.5"/></svg>
+                  <b>We are a team</b>
+                  <small>2 to 6 students</small>
+                </span>
+              </label>
             </div>
-          </div>
-          <div class="field">
-            <label for="school">School Name</label>
-            <input id="school" name="school" required maxlength="120" autocomplete="organization" placeholder="Your school’s full name">
-          </div>
-          <div class="field">
-            <label for="city">City</label>
-            <input id="city" name="city" required maxlength="60" autocomplete="address-level2" placeholder="e.g. Jaipur">
+          </fieldset>
+
+          <div class="join-fields" hidden>
+            <div class="members"></div>
+            <button type="button" class="ghost-btn add-member" data-add-member data-team-only>+ Add member</button>
+            <p class="category-badge" aria-live="polite" hidden></p>
+            <div class="field" data-team-only>
+              <label for="teamName">Team Name</label>
+              <div class="with-button">
+                <input id="teamName" name="teamName" maxlength="40" autocomplete="off" placeholder="e.g. VisionX, NextGen">
+                <button type="button" class="ghost-btn" data-suggest>Suggest</button>
+              </div>
+            </div>
+            <div class="field">
+              <label for="school">School Name</label>
+              <input id="school" name="school" maxlength="120" autocomplete="organization" placeholder="Your school’s full name">
+            </div>
+            <div class="field city-field">
+              <label for="city">City</label>
+              <div class="combo">
+                <input id="city" name="city" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="city-list" autocomplete="off" maxlength="60" placeholder="Start typing, e.g. Jaipur">
+                <span class="combo-caret" aria-hidden="true"></span>
+                <ul id="city-list" class="combo-list" role="listbox" hidden></ul>
+              </div>
+              <input type="hidden" name="cityState">
+            </div>
+            <div class="contact-box">
+              <h3 data-contact-title>How can we reach you?</h3>
+              <p>A mobile number, ideally a parent’s or teacher’s. We only use it for Ideathon updates.</p>
+              <div class="field">
+                <label for="phone">Contact Number</label>
+                <div class="phone-input">
+                  <span aria-hidden="true">+91</span>
+                  <input id="phone" name="phone" type="tel" inputmode="numeric" maxlength="10" autocomplete="tel-national" placeholder="10-digit mobile number">
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- 2. Members -->
+        <!-- 2. Idea -->
         <div class="step" data-step="1" hidden>
-          <h2 class="step-title" tabindex="-1">Who’s in the team?</h2>
-          <p class="step-sub">2 to 5 students. The first one is your <b>team captain</b>: we’ll contact them for all updates.</p>
-          <div class="members"></div>
-          <button type="button" class="ghost-btn add-member" data-add-member>+ Add another member</button>
-          <p class="category-badge" aria-live="polite" hidden></p>
-          <div class="contact-box">
-            <h3>How can we reach your team?</h3>
-            <p>A WhatsApp number, ideally a parent’s or teacher’s. We only use it for Ideathon updates.</p>
-            <div class="field" data-contact>
-              <label for="phone">WhatsApp Number</label>
-              <input id="phone" name="phone" type="tel" inputmode="numeric" maxlength="15" autocomplete="tel" placeholder="10-digit mobile">
-            </div>
-          </div>
-        </div>
-
-        <!-- 3. Idea -->
-        <div class="step" data-step="2" hidden>
           <h2 class="step-title" tabindex="-1">Now, your idea</h2>
           <p class="step-sub">Short and simple is perfect. A rough idea is totally fine.</p>
           <div class="field">
             <label for="pitch">Your idea in one line</label>
-            <input id="pitch" name="pitch" required maxlength="120" placeholder="e.g. An app that reminds students to drink water at school" data-count>
+            <input id="pitch" name="pitch" maxlength="120" placeholder="e.g. An app that reminds students to drink water at school" data-count>
           </div>
           <fieldset class="field chips-field" data-required-group="industry">
-            <legend>Which area is it in? <small>(pick one or more)</small></legend>
+            <legend>Which domain is it in? <small>(pick one or more)</small></legend>
             <div class="chips">
               <label class="chip"><input type="checkbox" name="industry" value="Technology / App / AI"><span>Tech / App / AI</span></label>
               <label class="chip"><input type="checkbox" name="industry" value="Education"><span>Education</span></label>
-              <label class="chip"><input type="checkbox" name="industry" value="Health / Fitness"><span>Health / Fitness</span></label>
-              <label class="chip"><input type="checkbox" name="industry" value="Environment"><span>Environment</span></label>
-              <label class="chip"><input type="checkbox" name="industry" value="Robotics / Automation"><span>Robotics</span></label>
+              <label class="chip"><input type="checkbox" name="industry" value="Healthcare"><span>Healthcare</span></label>
+              <label class="chip"><input type="checkbox" name="industry" value="Environment / Sustainability"><span>Environment</span></label>
+              <label class="chip"><input type="checkbox" name="industry" value="Rural Development"><span>Rural Development</span></label>
+              <label class="chip"><input type="checkbox" name="industry" value="Open Access / Accessibility"><span>Open Access</span></label>
+              <label class="chip"><input type="checkbox" name="industry" value="Robotics / IoT"><span>Robotics / IoT</span></label>
+              <label class="chip"><input type="checkbox" name="industry" value="Agriculture"><span>Agriculture</span></label>
               <label class="chip"><input type="checkbox" name="industry" value="Food"><span>Food</span></label>
               <label class="chip"><input type="checkbox" name="industry" value="Finance / Money"><span>Money / Finance</span></label>
-              <label class="chip"><input type="checkbox" name="industry" value="Online selling"><span>Online selling</span></label>
-              <label class="chip"><input type="checkbox" name="industry" value="Local services"><span>Local services</span></label>
-              <label class="chip"><input type="checkbox" name="industry" value="Fashion / Lifestyle"><span>Fashion</span></label>
+              <label class="chip"><input type="checkbox" name="industry" value="Transport"><span>Transport</span></label>
               <label class="chip"><input type="checkbox" name="industry" value="Media / Entertainment"><span>Media / Fun</span></label>
-              <label class="chip"><input type="checkbox" name="industry" value="Travel"><span>Travel</span></label>
-              <label class="chip"><input type="checkbox" name="industry" value="Other"><span>Other</span></label>
+              <span class="custom-chips"></span>
+              <label class="chip"><input type="checkbox" name="industryOtherToggle" value="Others"><span>+ Others</span></label>
             </div>
-            <input class="other-input" name="industryOther" maxlength="40" placeholder="Tell us the area" hidden>
+            <div class="other-row" hidden>
+              <input class="other-input" name="industryOther" maxlength="40" autocomplete="off" placeholder="Type your domain, e.g. Sports">
+              <button type="button" class="ghost-btn" data-add-domain>Add</button>
+            </div>
           </fieldset>
           <div class="field">
             <label for="problem">What problem are you solving? <small>(optional)</small></label>
@@ -113,8 +143,8 @@
           </div>
         </div>
 
-        <!-- 4. Mock test (optional) -->
-        <div class="step" data-step="3" hidden>
+        <!-- 3. Mock test (optional) -->
+        <div class="step" data-step="2" hidden>
           <div class="mock-intro">
             <h2 class="step-title" tabindex="-1">Would you like to take a mock test? <small>(optional)</small></h2>
             <p class="step-sub">Round 1 is an online aptitude test. Try a short practice test now so you know what to expect. It is only for practice and does not affect your registration.</p>
@@ -160,19 +190,22 @@
             <div class="mock-score"><b data-mock-score></b><span data-mock-msg></span></div>
             <ol class="mock-review"></ol>
             <p class="hint-plain">This was only practice. Your score is not used for selection.</p>
-            <button type="button" class="ghost-btn" data-mock-retry>↻ Try again</button>
+            <button type="button" class="ghost-btn" data-mock-retry>↻︎ Try again</button>
           </div>
         </div>
 
-        <!-- 5. Review -->
-        <div class="step" data-step="4" hidden>
+        <!-- 4. Review -->
+        <div class="step" data-step="3" hidden>
           <h2 class="step-title" tabindex="-1">Looks good?</h2>
           <p class="step-sub">Check your details once, then submit.</p>
           <div class="review"></div>
-          <label class="consent field">
-            <input type="checkbox" name="consent" required>
-            <span>A teacher or parent knows we’re registering, and these details are correct.</span>
-          </label>
+          <div class="policy field">
+            <p>Please review these required policies before submitting your response: <a href="terms.html" target="_blank" rel="noopener">Terms &amp; Conditions</a></p>
+            <label class="policy-check">
+              <input type="checkbox" name="consent">
+              <span>I have read and agree to all required policies listed above.</span>
+            </label>
+          </div>
         </div>
 
         <p class="form-error" role="alert"></p>
@@ -186,18 +219,19 @@
         <div class="done-burst" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
         <span class="done-icon" aria-hidden="true">✓</span>
         <h2>You’re in, <span data-team></span>! 🎉</h2>
-        <p>Registration ID <b data-reg-id></b>. Keep it handy.</p>
+        <p>Registration ID <b data-reg-id></b>. Keep it handy. We have also sent you an email.</p>
         <p class="done-preview" hidden>Preview mode: this registration was not stored yet.</p>
+        <p class="done-buddy" hidden><b>Tip:</b> ideas grow faster with a buddy. Before Round 2 you can team up with at least one more participant, or continue on your own.</p>
         <div class="done-next">
           <h3>What happens next</h3>
           <ol>
-            <li><b>Round 1:</b> an online aptitude test. We’ll share the date with your captain.</li>
+            <li><b>Round 1:</b> an online aptitude test. We’ll share the date by email.</li>
             <li><b>Round 2:</b> work on your idea with an MNIT mentor and pitch it online.</li>
             <li><b>Round 3:</b> top teams pitch live at MNIT, Jaipur.</li>
           </ol>
         </div>
         <div class="done-actions">
-          <a class="button button-purple" data-share target="_blank" rel="noopener">Tell your team on WhatsApp <span>↗︎</span></a>
+          <a class="button button-purple" data-share target="_blank" rel="noopener">Share on WhatsApp <span>↗︎</span></a>
           <a class="ghost-btn" href="index.html">Back to the website</a>
         </div>
       </div>
@@ -209,14 +243,14 @@
       <div class="member-head"><span class="member-no"></span><span class="member-role"></span><button type="button" class="member-remove" data-remove-member hidden>Remove</button></div>
       <div class="field">
         <label>Full Name</label>
-        <input data-k="name" maxlength="60" autocomplete="off" placeholder="Student’s name">
+        <input data-k="name" maxlength="60" autocomplete="off" autocapitalize="words" placeholder="Student’s full name">
       </div>
       <div class="field">
-        <label>Email</label>
-        <input data-k="email" type="email" inputmode="email" maxlength="120" autocomplete="off" placeholder="Student’s or parent’s email">
+        <label>Email ID</label>
+        <input data-k="email" type="email" inputmode="email" maxlength="120" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Student’s or parent’s email">
       </div>
       <fieldset class="field chips-field class-field">
-        <legend>Class</legend>
+        <legend>Grade</legend>
         <div class="chips chips-tight">
           <label class="chip"><input type="radio" data-k="class" value="6"><span>6</span></label>
           <label class="chip"><input type="radio" data-k="class" value="7"><span>7</span></label>
