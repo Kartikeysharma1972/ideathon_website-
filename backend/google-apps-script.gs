@@ -2,7 +2,7 @@
  * Ideathon 2026 registrations → Google Sheet.
  * Receives student registrations (individual or team) and mentor registrations from the website (forms.js) and appends one row each
  * to the "Teams" or "Mentors" tab of the spreadsheet this script is bound to,
- * then emails a thank-you note to the address they gave.
+ * and (when SEND_EMAILS is true) emails a thank-you note to the address they gave.
  * Setup: see backend/SETUP.md.
  */
 const TEAM_HEADERS = [
@@ -23,6 +23,9 @@ const PROFILE_FOLDER = 'Ideathon 2026 Mentor Profiles';
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 const FILE_TYPES = /\.(pdf|docx?|jpe?g|png)$/i;
 
+// thank-you emails are OFF for now: registrations are only saved. Set to true (and publish a new version) to start sending them.
+const SEND_EMAILS = false;
+
 // thank-you emails: fill these in before the test date is announced (blank = the line is left out)
 const TEST_DATE = '';      // e.g. '15 December 2026'
 const TEST_TIME = '';      // e.g. '11:00 am'
@@ -41,7 +44,7 @@ function doPost(e) {
     const id = (isMentor ? 'MEN' : 'IDT') + '26-' + String(sheet.getLastRow()).padStart(4, '0');
     sheet.appendRow(isMentor ? mentorRow(id, data) : teamRow(id, data));
     lock.releaseLock();
-    sendThankYou(isMentor, data);
+    if (SEND_EMAILS) sendThankYou(isMentor, data);
     return json({ ok: true, id: id });
   } catch (err) {
     return json({ ok: false, error: String(err) });
