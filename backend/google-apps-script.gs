@@ -29,7 +29,8 @@ const SEND_EMAILS = false;
 // thank-you emails: fill these in before the test date is announced (blank = the line is left out)
 const TEST_DATE = '';      // e.g. '15 December 2026'
 const TEST_TIME = '';      // e.g. '11:00 am'
-const CONTACT_EMAIL = 'support@codevidhya.com';
+// the thank-you emails' reply-to and contact address (the website footer keeps support@)
+const CONTACT_EMAIL = 'headoffice.codevidhya@codevidhya.com';
 const CONTACT_PHONE = '';  // e.g. '+91 98xxx xxxxx'
 const LMS_URL = 'https://cv-edu.codevidhya.com/my/';
 const SIGN_OFF = 'Team Codevidhya x MNIT Ideathon';
