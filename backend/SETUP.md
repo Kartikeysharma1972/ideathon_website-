@@ -30,7 +30,9 @@ It saves each one as a row in a Google Sheet: a **Teams** tab (individuals and t
 - Only people you share the Google Sheet with can see the data.
 - Mentor profile uploads (CV / resume, up to 5 MB) are saved in a Google Drive folder called **Ideathon 2026 Mentor Profiles** in the same Google account, and the **Mentors** tab gets a link to each file. That is why Google also asks for Drive permission during step 4.
 - Answers that start with `=`, `+`, `-` or `@` are stored as plain text so they can never run as spreadsheet formulas.
-- Thank-you emails are **off** for now (`SEND_EMAILS = false` at the top of the script), so registrations are only saved. To turn them on, set it to `true` and publish a new version. When on, after each registration the script emails a thank-you note (student or mentor) from the Google account that owns the script. Google asks for "send email as you" permission during step 4. Before the test date is announced, fill in `TEST_DATE`, `TEST_TIME` and `CONTACT_PHONE` at the top of the script and publish a new version. A free Gmail account can send about 100 emails a day; a Google Workspace account about 1,500.
+- Emails are switched on separately at the top of the script: `SEND_MENTOR_EMAILS = true` (mentors get the registration email) and `SEND_STUDENT_EMAILS = false` (student registrations are only saved for now). Change one and publish a new version.
+- Emails go out from `headoffice.codevidhya@codevidhya.com` (`SEND_FROM`) if the script is deployed from that Google account, or if the deploying account has it as a Gmail "Send mail as" address. Otherwise they go from the deploying account, with replies going to head office. The Mentors tab's last column, **Email sent**, shows what happened for each mentor.
+- After pasting a new version that sends email, run `testMentorMail` once from the editor (▶ Run). Google asks for Gmail permission, and a sample mentor email arrives in your own inbox.
 
 ## Make the live site fast (for the server admin)
 

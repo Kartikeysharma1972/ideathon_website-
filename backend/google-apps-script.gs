@@ -2,7 +2,7 @@
  * Ideathon 2026 registrations → Google Sheet.
  * Receives student registrations (individual or team) and mentor registrations from the website (forms.js) and appends one row each
  * to the "Teams" or "Mentors" tab of the spreadsheet this script is bound to,
- * and (when SEND_EMAILS is true) emails a thank-you note to the address they gave.
+ * and emails a thank-you note to the address they gave (mentors and students are switched on separately below).
  * Setup: see backend/SETUP.md.
  */
 const TEAM_HEADERS = [
@@ -17,14 +17,19 @@ const TEAM_HEADERS = [
   'Idea (one line)', 'Domain', 'Problem (optional)',
   'Mock test taken?', 'Mock test level', 'Mock test score', 'Mock test time'
 ];
-const MENTOR_HEADERS = ['Registration ID', 'Submitted at', 'Full Name', 'Email', 'WhatsApp Number', 'Branch & Year', 'Can help with', 'Note', 'Profile file'];
+const MENTOR_HEADERS = ['Registration ID', 'Submitted at', 'Full Name', 'Email', 'WhatsApp Number', 'Branch & Year', 'Can help with', 'Note', 'Profile file', 'Email sent'];
 // uploaded mentor profiles (CV / resume) are saved in this Google Drive folder, created on first upload
 const PROFILE_FOLDER = 'Ideathon 2026 Mentor Profiles';
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 const FILE_TYPES = /\.(pdf|docx?|jpe?g|png)$/i;
 
-// thank-you emails are OFF for now: registrations are only saved. Set to true (and publish a new version) to start sending them.
-const SEND_EMAILS = false;
+// thank-you emails, switched on separately (publish a new version after changing):
+// students are OFF for now (registrations are only saved); mentors get the registration email.
+const SEND_STUDENT_EMAILS = false;
+const SEND_MENTOR_EMAILS = true;
+// emails go out from this address when the script runs under it, or when the script owner's Gmail
+// has it added as a "Send mail as" address; otherwise they go from the owner's account with replies to it
+const SEND_FROM = 'headoffice.codevidhya@codevidhya.com';
 
 // thank-you emails: fill these in before the test date is announced (blank = the line is left out)
 const TEST_DATE = '';      // e.g. '15 December 2026'
@@ -33,7 +38,7 @@ const TEST_TIME = '';      // e.g. '11:00 am'
 const CONTACT_EMAIL = 'headoffice.codevidhya@codevidhya.com';
 const CONTACT_PHONE = '';  // e.g. '+91 98xxx xxxxx'
 const LMS_URL = 'https://cv-edu.codevidhya.com/my/';
-const SIGN_OFF = 'Team Codevidhya x MNIT Ideathon';
+const SIGN_OFF = 'Team MIIC × Codevidhya Ideathon 2026';
 
 function doPost(e) {
   const lock = LockService.getScriptLock();
@@ -44,8 +49,13 @@ function doPost(e) {
     const sheet = sheetFor(isMentor ? 'Mentors' : 'Teams', isMentor ? MENTOR_HEADERS : TEAM_HEADERS);
     const id = (isMentor ? 'MEN' : 'IDT') + '26-' + String(sheet.getLastRow()).padStart(4, '0');
     sheet.appendRow(isMentor ? mentorRow(id, data) : teamRow(id, data));
+    const row = sheet.getLastRow();
     lock.releaseLock();
-    if (SEND_EMAILS) sendThankYou(isMentor, data);
+    if (isMentor && SEND_MENTOR_EMAILS) {
+      // the last column records what happened, so a failed email is visible in the sheet
+      sheet.getRange(row, MENTOR_HEADERS.length).setValue(sendMentorMail(id, data));
+    }
+    if (!isMentor && SEND_STUDENT_EMAILS) sendThankYou(false, data);
     return json({ ok: true, id: id });
   } catch (err) {
     return json({ ok: false, error: String(err) });
@@ -93,6 +103,70 @@ function thankYouMail(isMentor, name) {
       'See you at the test!'
     ]
   };
+}
+
+// mentor registration email; returns a short status for the sheet's "Email sent" column
+function sendMentorMail(id, d) {
+  const to = String(d.email || '').trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) return 'Not sent: invalid email';
+  const name = String(d.name || 'there').trim().split(/\s+/)[0];
+  const areas = list(d.areas) || 'Not specified';
+  const subject = 'Thank you for registering as a mentor: MIIC × Codevidhya Ideathon 2026';
+  const sections = [
+    ['p', 'Hi ' + esc(name) + ','],
+    ['p', 'Thank you for registering as an <b>MNIT Innovation Mentor</b> for the <b>MIIC × Codevidhya Ideathon 2026</b>! We’re really glad to have you with us.'],
+    ['h', 'What you told us'],
+    ['ul', ['Branch &amp; year: ' + esc(d.program || 'Not specified'), 'You can help with: ' + esc(areas), 'WhatsApp: ' + esc(d.phone || 'Not given')]],
+    ['h', 'What happens next'],
+    ['ol', [
+      '<b>Team pairing:</b> after Round 1, we will pair you with a school team (Grades 6–12) whose idea matches your strengths.',
+      '<b>Orientation:</b> you will join a short online orientation by Codevidhya about the Ideathon, the teams and what is expected from mentors.',
+      '<b>Mentor session (online, Round 2):</b> a 1-hour session with your team to help them sharpen their problem and solution, and to give feedback on their idea presentation (PPT) and pitch video.',
+      '<b>Campus final (Round 3):</b> if your team makes it to the top 10 finalists, come and cheer them on when they pitch live at MNIT.'
+    ]],
+    ['p', 'We will share your team details, session dates and joining links on email and WhatsApp before Round 2.'],
+    ['h', 'What you get'],
+    ['ul', ['A certificate for your contribution, plus free goodies as a thank-you', 'Real leadership experience guiding a team from idea to pitch', 'Connections across MIIC, Codevidhya and partner schools']],
+    ['p', 'If you have any questions or your availability changes, write to us at <b>' + CONTACT_EMAIL + '</b>.'],
+    ['p', 'Thank you for helping young innovators turn a spark into something real!'],
+    ['p', 'Warm regards,<br>' + SIGN_OFF],
+    ['small', 'Mentor registration ID: ' + id]
+  ];
+  const html = '<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.55;color:#1d2433;max-width:620px">' + sections.map(function (s) {
+    if (s[0] === 'h') return '<p style="margin:18px 0 6px"><b>' + s[1] + '</b></p>';
+    if (s[0] === 'ul' || s[0] === 'ol') return '<' + s[0] + ' style="margin:0 0 10px;padding-left:22px">' + s[1].map(function (li) { return '<li style="margin:3px 0">' + li + '</li>'; }).join('') + '</' + s[0] + '>';
+    if (s[0] === 'small') return '<p style="margin-top:18px;font-size:12px;color:#5b6475">' + s[1] + '</p>';
+    return '<p style="margin:0 0 10px">' + s[1] + '</p>';
+  }).join('') + '</div>';
+  const text = sections.map(function (s) {
+    if (s[0] === 'ul') return s[1].map(function (li) { return '- ' + li; }).join('\n');
+    if (s[0] === 'ol') return s[1].map(function (li, i) { return (i + 1) + '. ' + li; }).join('\n');
+    return s[1];
+  }).join('\n\n').replace(/<br>/g, '\n').replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+  return deliver(to, subject, text, html);
+}
+
+// sends from SEND_FROM when this account can; otherwise from the script owner's account with replies to SEND_FROM
+function deliver(to, subject, text, html) {
+  const opts = { name: SIGN_OFF, replyTo: CONTACT_EMAIL, htmlBody: html };
+  try {
+    const me = String(Session.getEffectiveUser().getEmail()).toLowerCase();
+    const canSendAs = me === SEND_FROM || GmailApp.getAliases().map(function (a) { return a.toLowerCase(); }).indexOf(SEND_FROM) >= 0;
+    if (canSendAs && me !== SEND_FROM) opts.from = SEND_FROM;
+    GmailApp.sendEmail(to, subject, text, opts);
+    return canSendAs ? 'Sent from ' + SEND_FROM : 'Sent from ' + me + ' (replies go to ' + CONTACT_EMAIL + ')';
+  } catch (err) {
+    return 'Not sent: ' + String(err).slice(0, 200);
+  }
+}
+
+// run this once from the editor (Run ▶) after pasting: it asks for Gmail permission and sends a sample to you
+function testMentorMail() {
+  Logger.log(sendMentorMail('MEN26-TEST', { name: 'Test Mentor', email: Session.getEffectiveUser().getEmail(), program: 'B.Tech CSE, 3rd year', areas: ['Coding', 'AI / ML'], phone: '+91 9000000000' }));
+}
+
+function esc(v) {
+  return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 // lets you open the web app URL in a browser to check it is live
