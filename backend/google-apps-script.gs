@@ -122,7 +122,7 @@ function sendMentorMail(id, d) {
       '<b>Team pairing:</b> after Round 1, we will pair you with a school team (Grades 6–12) whose idea matches your strengths.',
       '<b>Orientation:</b> you will join a short online orientation by Codevidhya about the Ideathon, the teams and what is expected from mentors.',
       '<b>Mentor session (online, Round 2):</b> a 1-hour session with your team to help them sharpen their problem and solution, and to give feedback on their idea presentation (PPT) and pitch video.',
-      '<b>Campus final (Round 3):</b> if your team makes it to the top 10 finalists, come and cheer them on when they pitch live at MNIT.'
+      '<b>Campus final (Round 3):</b> if your team makes it to the top 10 finalists, you will be with them in person at MNIT on the final day and take responsibility for them on campus: welcome them and help them settle in, run a last practice of their pitch, make sure they are ready on time, and support them while they present to the judges.'
     ]],
     ['p', 'We will share your team details, session dates and joining links on email and WhatsApp before Round 2.'],
     ['h', 'What you get'],
