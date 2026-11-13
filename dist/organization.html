@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="description" content="Register your school or organization for the MIIC × Codevidhya Ideathon 2026 and get a registration link to share with your students. Grades 6–8th / 9–12th.">
+  <title>Organization registration · MIIC × Codevidhya Ideathon 2026</title>
+  <link rel="canonical" href="https://live.codevidhya.com/organization.html">
+  <meta property="og:type" content="website"><meta property="og:site_name" content="MIIC × Codevidhya Ideathon 2026"><meta property="og:url" content="https://live.codevidhya.com/organization.html"><meta property="og:title" content="Organization registration · MIIC × Codevidhya Ideathon 2026"><meta property="og:description" content="Register your school or organization for the MIIC × Codevidhya Ideathon 2026 and get a registration link to share with your students."><meta property="og:image" content="https://live.codevidhya.com/assets/share-card.jpg"><meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;450;500;550;600;650;700&family=Space+Grotesk:wght@400;500;600;700&family=Caveat:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=20261102"><link rel="stylesheet" href="register.css?v=20261113">
+  <script src="forms-config.js?v=20261102"></script><script src="cities.js?v=20261102" defer></script><script src="forms.js?v=20261113" defer></script><script src="organization.js?v=20261113" defer></script>
+</head>
+<body class="reg-body">
+  <a class="skip-link" href="#org-form">Skip to the form</a>
+  <header class="reg-top">
+    <a href="index.html" class="brand" aria-label="MIIC × Codevidhya Ideathon home"><span class="brand-name">MIIC <i>×</i> Codevidhya <b>Ideathon</b></span></a>
+    <span class="reg-saved" aria-live="polite"></span>
+    <a class="reg-exit" href="register.html">← Back to registration</a>
+  </header>
+
+  <main class="reg-shell">
+    <aside class="reg-side">
+      <span class="eyebrow">MIIC × Codevidhya · IDEATHON 2026</span>
+      <h1>Bring the Ideathon to <span class="text-purple">your students.</span></h1>
+      <p>For schools, colleges, NGOs and learning centres. Register once, and we send you a link to share with your students.</p>
+      <ul class="reg-need">
+        <li><span><b>Register once</b> as an organization</span></li>
+        <li><span><b>Get a link</b> for your students and parents</span></li>
+        <li><span><b>See how many</b> of your students join</span></li>
+      </ul>
+      <p class="reg-note">Students still register themselves (on their own or as a team of up to 6). Your name and city are filled in for them.</p>
+    </aside>
+
+    <section class="reg-card" aria-labelledby="org-heading">
+      <form id="org-form" novalidate>
+        <h2 class="step-title" id="org-heading" tabindex="-1">Organization registration</h2>
+        <p class="step-sub">Takes about 3 minutes. One person, usually a teacher, coordinates for the organization.</p>
+
+        <fieldset class="field chips-field" data-required-group="orgType">
+          <legend>Type of organization</legend>
+          <div class="chips">
+            <label class="chip"><input type="radio" name="orgType" value="School"><span>School</span></label>
+            <label class="chip"><input type="radio" name="orgType" value="College / University"><span>College / University</span></label>
+            <label class="chip"><input type="radio" name="orgType" value="NGO / Foundation"><span>NGO / Foundation</span></label>
+            <label class="chip"><input type="radio" name="orgType" value="Coaching / Learning centre"><span>Coaching / Learning centre</span></label>
+            <label class="chip"><input type="radio" name="orgType" value="Other"><span>Other</span></label>
+          </div>
+        </fieldset>
+
+        <div class="field">
+          <label for="orgName">Organization name</label>
+          <input id="orgName" name="orgName" maxlength="120" autocomplete="organization" placeholder="Full name, e.g. Delhi Public School, Jaipur">
+        </div>
+
+        <fieldset class="field chips-field" data-school-only hidden>
+          <legend>Board <small>(optional)</small></legend>
+          <div class="chips">
+            <label class="chip"><input type="radio" name="board" value="CBSE"><span>CBSE</span></label>
+            <label class="chip"><input type="radio" name="board" value="ICSE / ISC"><span>ICSE / ISC</span></label>
+            <label class="chip"><input type="radio" name="board" value="State Board"><span>State Board</span></label>
+            <label class="chip"><input type="radio" name="board" value="IB / Cambridge"><span>IB / Cambridge</span></label>
+            <label class="chip"><input type="radio" name="board" value="Other"><span>Other</span></label>
+          </div>
+        </fieldset>
+
+        <div class="field city-field">
+          <label for="city">City</label>
+          <div class="combo">
+            <input id="city" name="city" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="city-list" autocomplete="off" maxlength="60" placeholder="Start typing, e.g. Jaipur">
+            <span class="combo-caret" aria-hidden="true"></span>
+            <ul id="city-list" class="combo-list" role="listbox" hidden></ul>
+          </div>
+          <input type="hidden" name="cityState">
+        </div>
+
+        <div class="org-row">
+          <div class="field">
+            <label for="address">Address</label>
+            <input id="address" name="address" maxlength="200" autocomplete="street-address" placeholder="Building, street, area">
+          </div>
+          <div class="field org-pin">
+            <label for="pincode">Pincode</label>
+            <input id="pincode" name="pincode" inputmode="numeric" maxlength="6" autocomplete="postal-code" placeholder="6 digits">
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="head">Head of the organization <small>(Principal / Director)</small></label>
+          <input id="head" name="head" maxlength="60" autocapitalize="words" placeholder="Full name">
+        </div>
+
+        <div class="contact-box">
+          <h3>Ideathon coordinator</h3>
+          <p>The person we will stay in touch with. We email the students’ registration link here.</p>
+          <div class="org-row">
+            <div class="field">
+              <label for="coordName">Full Name</label>
+              <input id="coordName" name="coordName" maxlength="60" autocapitalize="words" placeholder="Coordinator’s full name">
+            </div>
+            <div class="field">
+              <label for="designation">Designation</label>
+              <input id="designation" name="designation" maxlength="60" placeholder="e.g. Computer Teacher, Vice Principal">
+            </div>
+          </div>
+          <div class="field">
+            <label for="coordEmail">Email ID</label>
+            <input id="coordEmail" name="coordEmail" type="email" inputmode="email" maxlength="120" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="name@school.edu.in">
+          </div>
+          <div class="field">
+            <label for="phone">Mobile Number</label>
+            <div class="phone-input">
+              <span aria-hidden="true">+91</span>
+              <input id="phone" name="phone" type="tel" inputmode="numeric" maxlength="10" autocomplete="tel-national" placeholder="10-digit mobile number">
+            </div>
+          </div>
+        </div>
+
+        <fieldset class="field chips-field org-grades" data-required-group="grades">
+          <legend>Which grades will take part?</legend>
+          <div class="chips">
+            <label class="chip"><input type="checkbox" name="grades" value="Grades 6–8"><span>Grades 6–8</span></label>
+            <label class="chip"><input type="checkbox" name="grades" value="Grades 9–12"><span>Grades 9–12</span></label>
+          </div>
+        </fieldset>
+
+        <div class="field">
+          <label for="expected">About how many students may take part? <small>(optional)</small></label>
+          <input id="expected" name="expected" inputmode="numeric" maxlength="5" placeholder="e.g. 50">
+        </div>
+
+        <div class="policy field">
+          <p>Please review these required policies before submitting your response: <a href="terms.html" target="_blank" rel="noopener">Terms &amp; Conditions</a></p>
+          <label class="policy-check">
+            <input type="checkbox" name="consent">
+            <span>I have read and agree to all required policies listed above, on behalf of the organization.</span>
+          </label>
+          <label class="policy-check">
+            <input type="checkbox" name="parentConsent">
+            <span>We will help our students get their parent’s or guardian’s consent before they register.</span>
+          </label>
+        </div>
+
+        <p class="form-error" role="alert"></p>
+        <div class="reg-nav">
+          <a class="ghost-btn" href="register.html">← Back</a>
+          <button type="submit" class="button button-purple" data-submit>Register organization <span>↗︎</span></button>
+        </div>
+      </form>
+
+      <div class="reg-done" hidden tabindex="-1">
+        <div class="done-burst" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <span class="done-icon" aria-hidden="true">✓</span>
+        <h2><span data-org-name></span> is registered! 🎉</h2>
+        <p>Organization ID <b data-org-id></b>. Keep it handy.</p>
+        <p class="done-preview" hidden>Preview mode: this registration was not stored yet.</p>
+        <div class="org-link">
+          <h3>Your students’ registration link</h3>
+          <div class="org-link-row">
+            <input data-org-link readonly aria-label="Students’ registration link">
+            <button type="button" class="button button-purple" data-copy>Copy link</button>
+          </div>
+          <p>We have also emailed it to <b data-org-email></b>. When a student registers through it, your name and city are filled in for them.</p>
+        </div>
+        <div class="done-next">
+          <h3>What happens next</h3>
+          <ol>
+            <li><b>Share the link</b> with your students and their parents.</li>
+            <li><b>Students register</b> on their own or as a team of up to 6.</li>
+            <li><b>Round 1:</b> an online aptitude test. We’ll share the date by email.</li>
+          </ol>
+        </div>
+        <div class="done-actions">
+          <a class="button button-purple" data-share target="_blank" rel="noopener">Share on WhatsApp <span>↗︎</span></a>
+          <a class="ghost-btn" href="index.html">Back to the website</a>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

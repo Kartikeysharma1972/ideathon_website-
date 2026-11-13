@@ -302,6 +302,29 @@
     };
   })();
 
+  // ---------- registering through an organization's link (register.html?org=ORG26-0001) ----------
+  const orgParam = (new URLSearchParams(location.search).get('org') || '').trim().toUpperCase();
+  const organization = { id: /^ORG26-\d{4}$/.test(orgParam) ? orgParam : '', name: '' };
+  if (organization.id) {
+    const banner = form.querySelector('[data-org-banner]');
+    form.querySelector('[data-org-card]').hidden = true;
+    banner.hidden = false;
+    banner.innerHTML = `Registering through your organization (<b>${organization.id}</b>).`;
+    window.IdeathonForms.lookupOrganization(organization.id).then(org => {
+      if (!org) return;
+      organization.name = org.name;
+      const isSchool = org.type === 'School';
+      banner.innerHTML = `Registering through <b>${esc(org.name)}</b>${org.city ? `, ${esc(org.city)}` : ''}. ${isSchool ? 'Your school and city are' : 'Your city is'} filled in for you.`;
+      if (isSchool && !val('school')) form.school.value = org.name;
+      if (org.city && !val('city')) {
+        const [c, ...state] = org.city.split(', ');
+        form.city.value = c;
+        form.cityState.value = state.join(', ') || 'Other';
+      }
+      save();
+    }).catch(() => { /* the registration is still tagged with the ID even if the lookup fails */ });
+  }
+
   // ---------- domains: chips plus your own ("Others") ----------
   const otherToggle = form.querySelector('input[name="industryOtherToggle"]');
   const otherRow = form.querySelector('.other-row');
@@ -595,7 +618,7 @@
     }
     return {
       registrationType: isTeam() ? 'Team' : 'Individual',
-      team: { name: isTeam() ? val('teamName') : '', school: val('school'), city: city.label(), category: category() },
+      team: { name: isTeam() ? val('teamName') : '', school: val('school'), city: city.label(), category: category(), orgId: organization.id },
       members,
       contact: { phone: '+91 ' + val('phone') },
       idea: { pitch: val('pitch'), industry: checked('industry').join(', '), problem: val('problem') },
@@ -609,7 +632,7 @@
     const people = d.members.map((m, i) => row(!isTeam() ? 'Name' : i === 0 ? 'Captain' : `Student ${i + 1}`, `${m.name} · Grade ${m.class} · ${m.email}`)).join('');
     form.querySelector('.review').innerHTML =
       block('Basic Details', 0, row('Joining as', isTeam() ? `A team of ${d.members.length}` : 'Individual innovator') + people + row('Team name', d.team.name) +
-        row('Category', d.team.category) + row('School', d.team.school) + row('City', d.team.city) + row('Contact', d.contact.phone)) +
+        row('Category', d.team.category) + row('Organization', organization.name || organization.id) + row('School', d.team.school) + row('City', d.team.city) + row('Contact', d.contact.phone)) +
       block('Idea', 1, row('In one line', d.idea.pitch) + row('Domain', d.idea.industry) + row('Problem', d.idea.problem)) +
       block('Mock Test', STEP_MOCK, d.mockTest.taken ? row('Test', d.mockTest.level) + row('Score', `${d.mockTest.score} / ${d.mockTest.total} in ${d.mockTest.time}`) : '<div class="rv-row"><dd class="rv-empty">Not taken. That’s fine, it was optional.</dd></div>');
   }

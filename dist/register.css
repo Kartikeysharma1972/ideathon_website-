@@ -255,3 +255,29 @@ html.pencil-on,html.pencil-on *{cursor:none!important}
   .join-card input:checked+span:after{top:10px;right:10px;width:20px;height:20px;font-size:11px}
 }
 .rv-row:has(.rv-empty){grid-template-columns:1fr}
+/* organization registration: the third join card is a link to its own form */
+.join-card-org{grid-column:1/-1;text-decoration:none;color:inherit}
+.join-card-org>span{grid-template-columns:auto 1fr auto;align-items:center;column-gap:16px;padding:16px 20px}
+.join-card-org svg{margin:0}
+.join-card-text{display:grid;gap:3px}
+.join-card-arrow{font-style:normal;font-size:20px;color:var(--purple-dark);transition:transform .15s}
+.join-card-org:hover .join-card-arrow{transform:translateX(4px)}
+.join-card-org:focus-visible{outline:0}
+.join-card-org:focus-visible>span{outline:3px solid #399aff66;outline-offset:2px}
+.join-card[hidden]{display:none}
+.org-banner{margin:-6px 0 20px;padding:12px 16px;border-radius:12px;background:#eef6ff;color:var(--ink);font-size:14px;border:1px solid #cfe3fb}
+.org-row{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.org-row .org-pin{max-width:none}
+#org-form .org-row:has(.org-pin){grid-template-columns:1fr 150px}
+#org-form .policy{gap:12px}
+.org-link{max-width:520px;margin:24px auto 0;padding:18px 20px;border-radius:16px;border:1.5px solid #cfe3fb;background:#f6faff;text-align:left}
+.org-link h3{font-size:16px;margin-bottom:10px}
+.org-link p{font-size:13px;color:var(--muted);margin-top:10px}
+.org-link-row{display:flex;gap:10px}
+.org-link-row input{flex:1;min-width:0;font:500 14px var(--body)!important;padding:11px 13px!important;background:#fff!important}
+.org-link-row .button{white-space:nowrap}
+@media(max-width:700px){
+  .join-card-org>span{column-gap:12px;padding:14px}
+  .org-row,#org-form .org-row:has(.org-pin){grid-template-columns:1fr}
+  .org-link-row{flex-direction:column}
+}

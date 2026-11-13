@@ -1,7 +1,7 @@
 /**
  * Ideathon 2026 registrations → Google Sheet.
- * Receives student registrations (individual or team) and mentor registrations from the website (forms.js) and appends one row each
- * to the "Teams" or "Mentors" tab of the spreadsheet this script is bound to,
+ * Receives student registrations (individual or team), mentor registrations and organization (school) registrations from the
+ * website (forms.js) and appends one row each to the "Teams", "Mentors" or "Organizations" tab of the spreadsheet this script is bound to,
  * and emails a thank-you note to the address they gave (mentors and students are switched on separately below).
  * Setup: see backend/SETUP.md.
  */
@@ -15,8 +15,12 @@ const TEAM_HEADERS = [
   'Student 6 name', 'Student 6 grade', 'Student 6 email',
   'Contact Number',
   'Idea (one line)', 'Domain', 'Problem (optional)',
-  'Mock test taken?', 'Mock test level', 'Mock test score', 'Mock test time', 'Added to LMS sheet'
+  'Mock test taken?', 'Mock test level', 'Mock test score', 'Mock test time', 'Added to LMS sheet', 'Organization ID'
 ];
+// students who register through an organization's link are tagged with its ID, and counted on its row
+const ORG_HEADERS = ['Organization ID', 'Submitted at', 'Type', 'Organization name', 'Board', 'City', 'Address', 'Pincode',
+  'Head of organization', 'Coordinator name', 'Designation', 'Coordinator email', 'Coordinator mobile', 'Grades', 'Expected students',
+  'Student registration link', 'Students registered', 'Email sent'];
 const MENTOR_HEADERS = ['Registration ID', 'Submitted at', 'Full Name', 'Email', 'WhatsApp Number', 'Branch & Year', 'Can help with', 'Note', 'Profile file', 'Email sent'];
 // uploaded mentor profiles (CV / resume) are saved in this Google Drive folder, created on first upload
 const PROFILE_FOLDER = 'Ideathon 2026 Mentor Profiles';
@@ -27,6 +31,10 @@ const FILE_TYPES = /\.(pdf|docx?|jpe?g|png)$/i;
 // students are OFF for now (registrations are only saved); mentors get the registration email.
 const SEND_STUDENT_EMAILS = false;
 const SEND_MENTOR_EMAILS = true;
+// the organization's coordinator gets their students' registration link by email
+const SEND_ORG_EMAILS = true;
+// the website; an organization's student link is SITE_URL + 'register.html?org=ORG26-0001'
+const SITE_URL = 'https://live.codevidhya.com/';
 // emails go out from this address when the script runs under it, or when the script owner's Gmail
 // has it added as a "Send mail as" address; otherwise they go from the owner's account with replies to it
 const SEND_FROM = 'headoffice.codevidhya@codevidhya.com';
@@ -49,13 +57,17 @@ function doPost(e) {
   lock.waitLock(20000);
   try {
     const data = JSON.parse(e.postData.contents);
+    if (data.type === 'organization') return registerOrganization(lock, data);
     const isMentor = data.type === 'mentor';
     const sheet = sheetFor(isMentor ? 'Mentors' : 'Teams', isMentor ? MENTOR_HEADERS : TEAM_HEADERS);
     const id = (isMentor ? 'MEN' : 'IDT') + '26-' + String(sheet.getLastRow()).padStart(4, '0');
     sheet.appendRow(isMentor ? mentorRow(id, data) : teamRow(id, data));
     const row = sheet.getLastRow();
     // inside the lock, so two registrations at once can't add the same email twice
-    if (!isMentor) sheet.getRange(row, TEAM_HEADERS.length).setValue(addToLmsSheet(data.members || []));
+    if (!isMentor) {
+      sheet.getRange(row, TEAM_HEADERS.indexOf('Added to LMS sheet') + 1).setValue(addToLmsSheet(data.members || []));
+      countForOrganization((data.team || {}).orgId, (data.members || []).length);
+    }
     lock.releaseLock();
     if (isMentor && SEND_MENTOR_EMAILS) {
       // the last column records what happened, so a failed email is visible in the sheet
@@ -218,8 +230,85 @@ function checkLmsSheet() {
   Logger.log('LMS tab: ' + sheet.getName() + ' | headers: ' + sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].join(' | ') + ' | rows: ' + sheet.getLastRow());
 }
 
-// lets you open the web app URL in a browser to check it is live
-function doGet() {
+// ---------- organizations (schools, colleges, NGOs, learning centres) ----------
+function registerOrganization(lock, d) {
+  const sheet = sheetFor('Organizations', ORG_HEADERS);
+  const id = 'ORG26-' + String(sheet.getLastRow()).padStart(4, '0');
+  const link = SITE_URL + 'register.html?org=' + id;
+  const c = d.coordinator || {};
+  sheet.appendRow([id, new Date(), clean(d.orgType), clean(d.name), clean(d.board), clean(d.city), clean(d.address), clean(d.pincode),
+    clean(d.head), clean(c.name), clean(c.designation), clean(String(c.email || '').toLowerCase()), clean(c.phone), list(d.grades), clean(d.expected),
+    link, 0, '']);
+  const row = sheet.getLastRow();
+  lock.releaseLock();
+  if (SEND_ORG_EMAILS) sheet.getRange(row, ORG_HEADERS.length).setValue(sendOrganizationMail(id, link, d));
+  return json({ ok: true, id: id, link: link });
+}
+
+// adds a registration's students to its organization's "Students registered" count
+function countForOrganization(orgId, students) {
+  const id = String(orgId || '').trim().toUpperCase();
+  if (!/^ORG26-\d{4}$/.test(id) || !students) return;
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Organizations');
+  if (!sheet || sheet.getLastRow() < 2) return;
+  const ids = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getValues();
+  for (let i = 0; i < ids.length; i++) {
+    if (String(ids[i][0]) !== id) continue;
+    const cell = sheet.getRange(i + 2, ORG_HEADERS.indexOf('Students registered') + 1);
+    cell.setValue((Number(cell.getValue()) || 0) + students);
+    return;
+  }
+}
+
+// the website looks up an organization's name and city (nothing else) when a student opens its link
+function findOrganization(orgId) {
+  const id = String(orgId || '').trim().toUpperCase();
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Organizations');
+  if (!/^ORG26-\d{4}$/.test(id) || !sheet || sheet.getLastRow() < 2) return null;
+  const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, 6).getValues();
+  for (let i = 0; i < rows.length; i++) {
+    if (String(rows[i][0]) === id) return { id: id, type: String(rows[i][2]), name: String(rows[i][3]), city: String(rows[i][5]) };
+  }
+  return null;
+}
+
+function sendOrganizationMail(id, link, d) {
+  const c = d.coordinator || {};
+  const to = String(c.email || '').trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) return 'Not sent: invalid email';
+  const name = String(c.name || 'there').trim().split(/\s+/)[0];
+  const org = String(d.name || 'your organization').trim();
+  const forward = 'The MIIC × Codevidhya Ideathon 2026 is open for students of Grades 6–8 and 9–12. Register on your own or as a team of up to 6, in about 5 minutes: ' + link;
+  const subject = org + ' is registered: MIIC × Codevidhya Ideathon 2026';
+  const html = '<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.55;color:#1d2433;max-width:620px">' +
+    '<p>Hi ' + esc(name) + ',</p>' +
+    '<p>Thank you for registering <b>' + esc(org) + '</b> for the <b>MIIC × Codevidhya Ideathon 2026</b>! Your Organization ID is <b>' + id + '</b>.</p>' +
+    '<p style="margin:18px 0 6px"><b>Your students’ registration link</b></p>' +
+    '<p style="margin:0 0 10px"><a href="' + link + '">' + link + '</a></p>' +
+    '<p style="margin:0 0 10px">Share this link with your students and their parents. When a student registers through it, your organization’s name and city are filled in for them, and the registration is counted for ' + esc(org) + '.</p>' +
+    '<p style="margin:18px 0 6px"><b>What happens next</b></p>' +
+    '<ol style="margin:0 0 10px;padding-left:22px">' +
+    '<li style="margin:3px 0">Students register on their own or as a team of up to 6 (Grades 6–8 and 9–12).</li>' +
+    '<li style="margin:3px 0"><b>Round 1:</b> an online aptitude test on our LMS. We will share the date by email.</li>' +
+    '<li style="margin:3px 0"><b>Round 2:</b> shortlisted teams work on their idea with an MNIT mentor and pitch it online.</li>' +
+    '<li style="margin:3px 0"><b>Round 3:</b> up to 20 finalist teams pitch live at MNIT, Jaipur.</li>' +
+    '</ol>' +
+    '<p style="margin:0 0 10px">Most participants are under 18, so please help your students get their parent’s or guardian’s consent before they register.</p>' +
+    '<p style="margin:18px 0 6px"><b>A message you can forward to students and parents</b></p>' +
+    '<p style="margin:0 0 10px;padding:10px 14px;background:#f6faff;border-radius:8px">' + esc(forward) + '</p>' +
+    '<p style="margin:0 0 10px">For any questions, write to us at <b>' + CONTACT_EMAIL + '</b>.</p>' +
+    '<p style="margin:0 0 10px">Warm regards,<br>' + SIGN_OFF + '</p></div>';
+  const text = html.replace(/<\/p>/g, '\n\n').replace(/<\/li>/g, '\n').replace(/<br>/g, '\n').replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\n{3,}/g, '\n\n').trim();
+  return deliver(to, subject, text, html);
+}
+
+// opening the web app URL in a browser shows it is live; ?org=ORG26-0001 returns that organization's name and city
+function doGet(e) {
+  const orgId = e && e.parameter && e.parameter.org;
+  if (orgId) {
+    const org = findOrganization(orgId);
+    return json(org ? { ok: true, org: org } : { ok: false, error: 'Organization not found' });
+  }
   return json({ ok: true, service: 'Ideathon 2026 registrations' });
 }
 
@@ -232,7 +321,8 @@ function teamRow(id, d) {
     ...member(0), ...member(1), ...member(2), ...member(3), ...member(4), ...member(5),
     clean(c.phone),
     clean(i.pitch), clean(i.industry), clean(i.problem),
-    mt.taken ? 'Yes' : 'No', mt.taken ? clean(mt.level) : '', mt.taken ? clean(mt.score + ' / ' + mt.total) : '', mt.taken ? clean(mt.time) : ''
+    mt.taken ? 'Yes' : 'No', mt.taken ? clean(mt.level) : '', mt.taken ? clean(mt.score + ' / ' + mt.total) : '', mt.taken ? clean(mt.time) : '',
+    '', clean(String(t.orgId || '').toUpperCase())
   ];
 }
 

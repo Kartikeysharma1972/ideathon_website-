@@ -52,3 +52,10 @@ The 3D models are already compressed (about 1.9 MB in total). Three server setti
    ```
    (HTTP/2 needs Apache's `mpm_event`. If the server uses `mpm_prefork` with mod_php, check before switching.)
 3. **Check it:** `curl -sI -H "Accept-Encoding: gzip" https://live.codevidhya.com/assets/models/teacher.glb` should show `Content-Encoding: gzip` and an `Expires` header, and `curl -sI --http2 https://live.codevidhya.com/` should start with `HTTP/2 200`.
+
+## Organization (school) registration
+
+- Schools, colleges, NGOs and learning centres register on `organization.html` (the "Organization registration" card on the registration page). Each one gets a row in the **Organizations** tab with an ID like `ORG26-0001`.
+- The coordinator is emailed the organization's student link, `https://live.codevidhya.com/register.html?org=ORG26-0001` (`SEND_ORG_EMAILS`, sent from head office like the mentor email; the **Email sent** column shows what happened).
+- A student who opens that link sees the organization's name, gets the school (for schools) and city filled in, and their registration is tagged in the Teams tab's last column, **Organization ID**. The organization's **Students registered** count goes up by the number of students in the registration.
+- The website looks up an organization with `GET <web app URL>?org=ORG26-0001`, which returns only its ID, type, name and city.

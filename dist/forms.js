@@ -19,9 +19,16 @@
   }
   function localId(type) {
     const n = Math.floor(1000 + Math.random() * 9000);
-    return `${type === 'mentor' ? 'MEN' : 'IDT'}26-${n}`;
+    return `${{ mentor: 'MEN', organization: 'ORG' }[type] || 'IDT'}26-${n}`;
   }
-  window.IdeathonForms = { submit, isPreview: () => !endpoint() };
+  // an organization's name and city, for students who open its link (register.html?org=ORG26-0001)
+  async function lookupOrganization(id) {
+    if (!endpoint()) return null;
+    const res = await fetch(`${endpoint()}?org=${encodeURIComponent(id)}`);
+    const out = await res.json().catch(() => ({}));
+    return out.ok ? out.org : null;
+  }
+  window.IdeathonForms = { submit, lookupOrganization, isPreview: () => !endpoint() };
 
   // ---- mentor form (home page) ----
   const form = document.getElementById('mentor-form');
