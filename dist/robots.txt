@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://live.codevidhya.com/sitemap.xml
+Sitemap: https://live.codevidhya.com/ideathon-2026/sitemap.xml

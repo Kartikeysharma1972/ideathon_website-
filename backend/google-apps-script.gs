@@ -34,7 +34,7 @@ const SEND_MENTOR_EMAILS = true;
 // the organization's coordinator gets their students' registration link by email
 const SEND_ORG_EMAILS = true;
 // the website; an organization's student link is SITE_URL + 'register.html?org=ORG26-0001'
-const SITE_URL = 'https://live.codevidhya.com/';
+const SITE_URL = 'https://live.codevidhya.com/ideathon-2026/';
 // emails go out from this address when the script runs under it, or when the script owner's Gmail
 // has it added as a "Send mail as" address; otherwise they go from the owner's account with replies to it
 const SEND_FROM = 'headoffice.codevidhya@codevidhya.com';
