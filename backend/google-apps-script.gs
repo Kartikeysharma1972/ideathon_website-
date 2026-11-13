@@ -42,7 +42,7 @@ const SIGN_OFF = 'Team MIIC × Codevidhya Ideathon 2026';
 
 // every registered student (the individual, or each team member) is also added to the LMS sheet as Email | Name | Class;
 // the LMS then fills in LMS Status and LMS Link there. Paste the link of that tab (with its #gid=...); blank = switched off.
-const LMS_SHEET_URL = '';
+const LMS_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1Vh3GW6IfTiYdbB3_tl9_9Ni_xYLkuq_PTKGkq4Ozs6w/edit?gid=0#gid=0';
 
 function doPost(e) {
   const lock = LockService.getScriptLock();
