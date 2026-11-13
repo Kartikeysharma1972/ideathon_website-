@@ -252,11 +252,11 @@
   stage.addEventListener('pointerleave', () => { fieldPointer.targetX = 0; fieldPointer.targetY = 0; });
 
   const prompts = [
-    { theme: 'Healthcare', question: 'How might we make a first consultation faster and easier to reach?', hint: 'Many people, especially older adults and those far from a hospital, lose hours to travel, queues and paperwork before they see a doctor. Many give up and delay treatment.' },
-    { theme: 'Rural Development', question: 'How might we bring one of those services closer to the people who need it?', hint: 'Villages often lack nearby services that towns take for granted, such as reliable transport, markets, clinics and internet. Families travel long distances for basic needs.' },
-    { theme: 'Education', question: 'How might we help every student understand a topic the first time, or catch up without feeling left behind?', hint: 'In every classroom, some students quietly fall behind because a lesson was explained in a way that did not work for them. They rarely get a second chance to learn it differently.' },
-    { theme: 'Sustainability', question: 'How might we cut the waste our school produces and give the rest a second life?', hint: 'Schools generate food waste every day, yet few students know where it goes or what it costs the environment. Much of it ends up in landfill, where it could have been reused.' },
-    { theme: 'Open Access', question: '', hint: 'This is the open-innovation track: Any original idea is welcome, even if it fits none of the other themes. Open up knowledge for students left out by disability, weak internet or language, or solve something new you have noticed around you.' }
+    { theme: 'Healthcare', statement: 'Good health depends on timely care, reliable information and support for both body and mind. Many people, especially the most vulnerable, still struggle to access these. Find a health or wellbeing challenge and design a solution that helps people live healthier lives.' },
+    { theme: 'Rural Development', statement: 'Rural communities are rich in knowledge, culture and resources. They also face limited access to livelihoods, markets, services and information. Find a challenge in rural life and design a solution that opens up opportunity and improves quality of life.' },
+    { theme: 'Education', statement: 'Every student learns differently, yet many do not get learning that fits their needs, pace or context. This creates learning gaps and limits real-world skills. Find a challenge in how students learn, teachers teach or schools support growth, and design a solution that makes learning more meaningful for everyone.' },
+    { theme: 'Sustainability', statement: 'Our daily habits shape the health of the planet. Waste, pollution, water scarcity and shrinking green spaces affect every community. Find an environmental challenge around you and design a solution that helps people live, consume and grow more sustainably.' },
+    { theme: 'Innovation for Good', statement: 'Some important problems do not fit into a single category. This theme welcomes any idea that creates a positive impact on society. Find a problem that matters to you and design a solution that makes a difference.' }
   ];
   const sparkTabs = [...document.querySelectorAll('[data-spark]')];
   function selectSpark(tab) {
@@ -265,11 +265,7 @@
     const panel = document.getElementById('spark-panel');
     panel.setAttribute('aria-labelledby', tab.id);
     document.getElementById('spark-theme').textContent = `PROBLEM STATEMENT · ${prompts[mode].theme.toUpperCase()}`;
-    const question = document.getElementById('spark-question');
-    question.textContent = prompts[mode].question;
-    // a theme without its own question (Open Access) shows only the description
-    question.hidden = !prompts[mode].question;
-    document.getElementById('spark-hint').textContent = prompts[mode].hint;
+    document.getElementById('spark-hint').textContent = prompts[mode].statement;
     document.getElementById('field-id').textContent = `00${mode + 1}`;
     if (!paused) panel.animate([{ opacity: .35, transform: 'translateY(8px)' }, { opacity: 1, transform: 'translateY(0)' }], { duration: 420, easing: 'ease-out' });
     if (paused) drawLab(1);
