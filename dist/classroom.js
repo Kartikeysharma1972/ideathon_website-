@@ -271,7 +271,7 @@ function build(models) {
   const signTex = canvasTexture(1024, 128, (g, w, h) => {
     g.fillStyle = '#25251f'; g.fillRect(0, 0, w, h);
     g.fillStyle = '#d2e7ff'; g.font = '700 58px "Space Grotesk", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.fillText('MIIC × CODEVIDHYA · IDEATHON 2026', w / 2, h / 2 + 3);
+    g.fillText('MIIC × Codevidhya · IDEATHON 2026', w / 2, h / 2 + 3);
   });
   const sign = new THREE.Mesh(new THREE.PlaneGeometry(2.8, 0.35), basic('#ffffff', { map: signTex }));
   sign.position.set(BOARD.x, 3.98, -D + 0.06);
