@@ -37,7 +37,7 @@ const TEST_TIME = '';      // e.g. '11:00 am'
 // the thank-you emails' reply-to and contact address (the website footer keeps support@)
 const CONTACT_EMAIL = 'headoffice.codevidhya@codevidhya.com';
 const CONTACT_PHONE = '';  // e.g. '+91 98xxx xxxxx'
-const LMS_URL = 'https://cv-edu.codevidhya.com/my/';
+const LMS_URL = 'https://cvlms.codevidhya.com/';
 const SIGN_OFF = 'Team MIIC × Codevidhya Ideathon 2026';
 
 // every registered student (the individual, or each team member) is also added to the LMS sheet as Email | Name | Class;
