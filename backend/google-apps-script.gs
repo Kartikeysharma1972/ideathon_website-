@@ -15,7 +15,7 @@ const TEAM_HEADERS = [
   'Student 6 name', 'Student 6 grade', 'Student 6 email',
   'Contact Number',
   'Idea (one line)', 'Domain', 'Problem (optional)',
-  'Mock test taken?', 'Mock test level', 'Mock test score', 'Mock test time'
+  'Mock test taken?', 'Mock test level', 'Mock test score', 'Mock test time', 'Added to LMS sheet'
 ];
 const MENTOR_HEADERS = ['Registration ID', 'Submitted at', 'Full Name', 'Email', 'WhatsApp Number', 'Branch & Year', 'Can help with', 'Note', 'Profile file', 'Email sent'];
 // uploaded mentor profiles (CV / resume) are saved in this Google Drive folder, created on first upload
@@ -40,6 +40,10 @@ const CONTACT_PHONE = '';  // e.g. '+91 98xxx xxxxx'
 const LMS_URL = 'https://cv-edu.codevidhya.com/my/';
 const SIGN_OFF = 'Team MIIC × Codevidhya Ideathon 2026';
 
+// every registered student (the individual, or each team member) is also added to the LMS sheet as Email | Name | Class;
+// the LMS then fills in LMS Status and LMS Link there. Paste the link of that tab (with its #gid=...); blank = switched off.
+const LMS_SHEET_URL = '';
+
 function doPost(e) {
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);
@@ -50,6 +54,8 @@ function doPost(e) {
     const id = (isMentor ? 'MEN' : 'IDT') + '26-' + String(sheet.getLastRow()).padStart(4, '0');
     sheet.appendRow(isMentor ? mentorRow(id, data) : teamRow(id, data));
     const row = sheet.getLastRow();
+    // inside the lock, so two registrations at once can't add the same email twice
+    if (!isMentor) sheet.getRange(row, TEAM_HEADERS.length).setValue(addToLmsSheet(data.members || []));
     lock.releaseLock();
     if (isMentor && SEND_MENTOR_EMAILS) {
       // the last column records what happened, so a failed email is visible in the sheet
@@ -167,6 +173,49 @@ function testMentorMail() {
 
 function esc(v) {
   return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// adds the students to the LMS sheet, matching its columns by their headers; returns a short status for the Teams tab.
+// An email that is already in the LMS sheet is skipped, since the LMS makes one login per email.
+function addToLmsSheet(members) {
+  if (!LMS_SHEET_URL) return 'Not set up';
+  try {
+    const sheet = lmsSheet();
+    const head = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(function (h) { return String(h).trim().toLowerCase(); });
+    const ce = head.indexOf('email'), cn = head.indexOf('name'), cc = head.indexOf('class');
+    if (ce < 0 || cn < 0 || cc < 0) return 'Failed: the LMS sheet needs Email, Name and Class headers in row 1';
+    const last = sheet.getLastRow();
+    const existing = last > 1 ? sheet.getRange(2, ce + 1, last - 1, 1).getValues().map(function (r) { return String(r[0]).trim().toLowerCase(); }) : [];
+    const added = [], skipped = [];
+    members.forEach(function (m) {
+      const email = String(m.email || '').trim().toLowerCase();
+      if (!email) return;
+      if (existing.indexOf(email) >= 0) { skipped.push(email); return; }
+      const out = head.map(function () { return ''; });
+      out[ce] = clean(email);
+      out[cn] = clean(String(m.name || '').trim());
+      out[cc] = m.class ? 'Class ' + clean(m.class) : '';
+      sheet.appendRow(out);
+      existing.push(email);
+      added.push(email);
+    });
+    return 'Added ' + added.length + (skipped.length ? '; already there: ' + skipped.join(', ') : '');
+  } catch (err) {
+    return 'Failed: ' + String(err).slice(0, 200);
+  }
+}
+
+function lmsSheet() {
+  const book = SpreadsheetApp.openByUrl(LMS_SHEET_URL);
+  const gid = (LMS_SHEET_URL.match(/[#&?]gid=(\d+)/) || [])[1];
+  const tab = gid && book.getSheets().filter(function (t) { return String(t.getSheetId()) === gid; })[0];
+  return tab || book.getSheets()[0];
+}
+
+// run once from the editor (Run ▶) after pasting: asks for permission and shows which LMS tab and columns were found
+function checkLmsSheet() {
+  const sheet = lmsSheet();
+  Logger.log('LMS tab: ' + sheet.getName() + ' | headers: ' + sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].join(' | ') + ' | rows: ' + sheet.getLastRow());
 }
 
 // lets you open the web app URL in a browser to check it is live
