@@ -35,7 +35,7 @@ const SEND_FROM = 'headoffice.codevidhya@codevidhya.com';
 const TEST_DATE = '';      // e.g. '15 December 2026'
 const TEST_TIME = '';      // e.g. '11:00 am'
 // the thank-you emails' reply-to and contact address (the website footer keeps support@)
-const CONTACT_EMAIL = 'headoffice.codevidhya@codevidhya.com';
+const CONTACT_EMAIL = 'support@codevidhya.com';
 const CONTACT_PHONE = '';  // e.g. '+91 98xxx xxxxx'
 const LMS_URL = 'https://cvlms.codevidhya.com/';
 const SIGN_OFF = 'Team MIIC × Codevidhya Ideathon 2026';
@@ -125,12 +125,12 @@ function sendMentorMail(id, d) {
     ['ul', ['Branch &amp; year: ' + esc(d.program || 'Not specified'), 'You can help with: ' + esc(areas), 'WhatsApp: ' + esc(d.phone || 'Not given')]],
     ['h', 'What happens next'],
     ['ol', [
-      '<b>Team pairing:</b> after Round 1, we will pair you with a school team (Grades 6–12) whose idea matches your strengths.',
-      '<b>Orientation:</b> you will join a short online orientation by Codevidhya about the Ideathon, the teams and what is expected from mentors.',
-      '<b>Mentor session (online, Round 2):</b> a 1-hour session with your team to help them sharpen their problem and solution, and to give feedback on their idea presentation (PPT) and pitch video.',
-      '<b>Campus final (Round 3):</b> if your team makes it to the top 10 finalists, you will be with them in person at MNIT on the final day and take responsibility for them on campus: welcome them and help them settle in, run a last practice of their pitch, make sure they are ready on time, and support them while they present to the judges.'
+      '<b>Team pairing:</b> After Round 1, we will pair you with a school team or individual (Grades 6-8/9-12) whose idea matches your strengths.',
+      '<b>Orientation:</b> You will join a short online orientation by Codevidhya about the Ideathon and what is expected from mentors.',
+      '<b>Mentor session (online, Round 2):</b> A 1-hour session with your team/individual to help them sharpen their problem and solution, and to give feedback on their idea presentation (PPT) and pitch video.',
+      '<b>Campus final (Round 3):</b> If your team/individual makes it to the top 20 finalists, you will be with them in person at MNIT on the final day and take responsibility for them on campus: welcome them and help them settle in, run a last practice of their pitch, make sure they are ready on time, and support them while they present to the judges.'
     ]],
-    ['p', 'We will share your team details, session dates and joining links on email and WhatsApp before Round 2.'],
+    ['p', 'We will share your team/individual details, session dates and joining links on email and WhatsApp before Round 2.'],
     ['h', 'What you get'],
     ['ul', ['A certificate for your contribution, plus free goodies as a thank-you', 'Real leadership experience guiding a team from idea to pitch', 'Connections across MIIC, Codevidhya and partner schools']],
     ['p', 'If you have any questions or your availability changes, write to us at <b>' + CONTACT_EMAIL + '</b>.'],
