@@ -3,8 +3,8 @@
  * Receives student registrations (individual or team), mentor registrations and organization (school) registrations from the
  * website (forms.js) and appends one row each to the "Teams", "Mentors" or "Organizations" tab of the spreadsheet this script is bound to,
  * and emails a confirmation to the address they gave (students, mentors and organizations are switched on separately below).
- * A student's email carries their own Stage 1 aptitude test link, which the LMS writes into the LMS sheet about a minute
- * after they register; see "Student registration email" below.
+ * A student's email carries their own LMS login (user ID and password) for the Stage 1 aptitude test, which the LMS writes
+ * into the LMS sheet shortly after they register; see "Student registration email" below.
  * Setup: see backend/SETUP.md.
  */
 const TEAM_HEADERS = [
@@ -42,6 +42,8 @@ const SEND_FROM = 'headoffice.codevidhya@codevidhya.com';
 
 // the last day to take the Stage 1 aptitude test, as written in the student email
 const TEST_DEADLINE = '7th December 2026';
+// where students log in to the LMS with the user ID and password from their email
+const LMS_LOGIN_URL = 'https://cvlms.codevidhya.com/login/index.php';
 // the emails' reply-to and contact address
 const CONTACT_EMAIL = 'support@codevidhya.com';
 const SIGN_OFF = 'Team MIIC × Codevidhya Ideathon 2026';
@@ -81,14 +83,16 @@ function doPost(e) {
 }
 
 // ---------- student registration email ----------
-// Each student's email carries their own aptitude test link, which the LMS writes into the LMS sheet's "LMS Link" column
-// about a minute after we add the student there. So on registration every student waits in the "Student emails" tab,
-// and sendPendingStudentEmails sends the email as soon as their link appears. The tab shows each student's link and
-// what happened to their email.
+// Each student's email carries their own LMS login: the user ID and password the LMS writes into the LMS sheet's
+// "Username" and "Password" columns shortly after we add the student there (no Username column: the user ID is their email).
+// So on registration every student waits in the "Student emails" tab, and sendPendingStudentEmails sends the email as soon
+// as their password appears. The tab shows each student's user ID and what happened to their email (never the password).
 // Google runs a timed trigger at most once a minute, so each run keeps checking every FAST_CHECK_SECONDS while a student
-// who registered in the last few minutes is still waiting: the email goes out within seconds of the link appearing.
-const STUDENT_EMAIL_HEADERS = ['Registration ID', 'Queued at', 'Student name', 'Email', 'Class', 'Aptitude test link', 'Email status', 'Sent at'];
-const WAITING_FOR_LINK = 'Waiting for LMS link';
+// who registered in the last few minutes is still waiting: the email goes out within seconds of the login appearing.
+const STUDENT_EMAIL_HEADERS = ['Registration ID', 'Queued at', 'Student name', 'Email', 'Class', 'LMS user ID', 'Email status', 'Sent at'];
+const WAITING_FOR_LOGIN = 'Waiting for LMS login';
+// rows queued by the earlier version of this script, which waited for a link
+const OLD_WAITING = 'Waiting for LMS link';
 const FAST_CHECK_SECONDS = 5;
 // the trigger's running time is capped at this many minutes a day, well under Google's 6 hours a day of trigger time;
 // after the cap, waiting students are still checked once a minute, just not every 5 seconds
@@ -101,7 +105,7 @@ function queueStudentEmails(id, members) {
   members.forEach(function (m) {
     const email = String(m.email || '').trim().toLowerCase();
     if (!email) return;
-    sheet.appendRow([id, new Date(), clean(String(m.name || '').trim()), clean(email), m.class ? 'Class ' + clean(m.class) : '', '', WAITING_FOR_LINK, '']);
+    sheet.appendRow([id, new Date(), clean(String(m.name || '').trim()), clean(email), m.class ? 'Class ' + clean(m.class) : '', '', WAITING_FOR_LOGIN, '']);
   });
 }
 
@@ -123,7 +127,7 @@ function sendPendingStudentEmails() {
   }
 }
 
-// one pass: emails every waiting student whose link is now in the LMS sheet;
+// one pass: emails every waiting student whose login is now in the LMS sheet;
 // returns how many students who registered in the last 5 minutes are still waiting for theirs
 function sendWaitingStudentEmails() {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Student emails');
@@ -131,9 +135,9 @@ function sendWaitingStudentEmails() {
   const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, STUDENT_EMAIL_HEADERS.length).getValues();
   const at = name => STUDENT_EMAIL_HEADERS.indexOf(name);
   const waiting = [];
-  rows.forEach(function (r, i) { if (r[at('Email status')] === WAITING_FOR_LINK) waiting.push(i); });
+  rows.forEach(function (r, i) { const st = r[at('Email status')]; if (st === WAITING_FOR_LOGIN || st === OLD_WAITING) waiting.push(i); });
   if (!waiting.length) return 0;
-  const links = lmsLinks();
+  const logins = lmsLogins();
   // one email per address, even when a parent's email is shared by two students
   const emailed = {};
   rows.forEach(function (r) { if (/^Sent/.test(r[at('Email status')])) emailed[String(r[at('Email')]).toLowerCase()] = true; });
@@ -144,15 +148,15 @@ function sendWaitingStudentEmails() {
     const i = waiting[k], r = rows[i], row = i + 2;
     const email = String(r[at('Email')]).trim().toLowerCase();
     if (emailed[email]) { sheet.getRange(row, at('Email status') + 1).setValue('Same email already sent'); continue; }
-    const link = links[email];
-    if (!link) {
+    const login = logins[email];
+    if (!login) {
       const age = Date.now() - new Date(r[at('Queued at')]).getTime();
-      if (age > GIVE_UP_HOURS * 3600 * 1000) sheet.getRange(row, at('Email status') + 1).setValue('No LMS link after ' + GIVE_UP_HOURS + ' hours: check the LMS sheet');
+      if (age > GIVE_UP_HOURS * 3600 * 1000) sheet.getRange(row, at('Email status') + 1).setValue('No LMS login after ' + GIVE_UP_HOURS + ' hours: check the LMS sheet');
       else if (age < 5 * 60 * 1000) recent++;
       continue;
     }
-    const status = sendStudentMail(email, link);
-    sheet.getRange(row, at('Aptitude test link') + 1, 1, 3).setValues([[link, status, new Date()]]);
+    const status = sendStudentMail(email, login);
+    sheet.getRange(row, at('LMS user ID') + 1, 1, 3).setValues([[clean(login.userId), status, new Date()]]);
     if (/^Sent/.test(status)) emailed[email] = true;
   }
   return recent;
@@ -169,25 +173,28 @@ function addTriggerTime(props, ms) {
   props.setProperties({ triggerTimeDay: today, triggerTimeMs: String(used + ms) });
 }
 
-// email → LMS link, from the LMS sheet (columns found by their headers; a link may be plain text or a hyperlink)
-function lmsLinks() {
+// email → { userId, password } from the LMS sheet, for rows that have a password (columns found by their headers;
+// without a Username column the user ID is the email)
+function lmsLogins() {
   const out = {};
   if (!LMS_SHEET_URL) return out;
-  const sheet = lmsSheet();
-  const values = sheet.getDataRange().getValues();
+  const values = lmsSheet().getDataRange().getDisplayValues();
   const head = values[0].map(function (h) { return String(h).trim().toLowerCase(); });
-  const ce = head.indexOf('email'), cl = head.indexOf('lms link');
-  if (ce < 0 || cl < 0 || values.length < 2) return out;
-  const rich = sheet.getRange(2, cl + 1, values.length - 1, 1).getRichTextValues();
-  values.slice(1).forEach(function (r, i) {
-    let link = String(r[cl]).trim();
-    if (!/^https?:\/\//.test(link)) link = (rich[i][0] && rich[i][0].getLinkUrl()) || '';
-    if (/^https?:\/\//.test(link)) out[String(r[ce]).trim().toLowerCase()] = link;
+  const find = names => names.map(function (n) { return head.indexOf(n); }).filter(function (i) { return i >= 0; })[0];
+  const ce = head.indexOf('email');
+  const cu = find(['username', 'user name', 'user id', 'userid', 'login id', 'login']);
+  const cp = find(['password', 'pass', 'lms password']);
+  if (ce < 0 || cp === undefined) return out;
+  values.slice(1).forEach(function (r) {
+    const email = String(r[ce]).trim().toLowerCase();
+    const password = String(r[cp]).trim();
+    if (!email || !password) return;
+    out[email] = { userId: cu === undefined ? email : (String(r[cu]).trim() || email), password: password };
   });
   return out;
 }
 
-function sendStudentMail(to, link) {
+function sendStudentMail(to, login) {
   const deadlineDay = TEST_DEADLINE.replace(/\s+\d{4}$/, '');
   const subject = 'Registration confirmed: complete your Stage 1 Aptitude Test | MIIC × Codevidhya Ideathon';
   const p = text => '<p style="margin:0 0 12px">' + text + '</p>';
@@ -197,8 +204,8 @@ function sendStudentMail(to, link) {
     p('This email is to confirm that your registration has been successfully received. We’re excited to have you participate in this innovation-driven journey.') +
     p('To proceed further, please complete your <b>Stage 1 Aptitude Test</b> before <b>' + deadlineDay + '</b> to clear Stage 1 and move ahead in the selection process.') +
     '<p style="margin:18px 0 6px"><b>Aptitude Test Details:</b></p>' +
-    p('Test Link: <a href="' + esc(link) + '">' + esc(link) + '</a><br>Deadline: <b>' + TEST_DEADLINE + '</b>') +
-    p('Please ensure that you complete the test within the given deadline.') +
+    p('Login here: <a href="' + LMS_LOGIN_URL + '">' + LMS_LOGIN_URL + '</a><br>User ID: <b>' + esc(login.userId) + '</b><br>Password: <b>' + esc(login.password) + '</b><br>Deadline: <b>' + TEST_DEADLINE + '</b>') +
+    p('Please ensure that you complete the test within the given deadline. Keep your user ID and password private.') +
     p('Thank you for being a part of the MIIC × Codevidhya Ideathon. For any queries reach out to <a href="mailto:' + CONTACT_EMAIL + '">' + CONTACT_EMAIL + '</a>.') +
     p('Best regards,<br>Team Codevidhya<br>MIIC × Codevidhya Ideathon') + '</div>';
   const text = html.replace(/<a href="[^"]*">([^<]*)<\/a>/g, '$1').replace(/<\/p>/g, '\n\n').replace(/<br>/g, '\n').replace(/<[^>]+>/g, '')
@@ -206,17 +213,25 @@ function sendStudentMail(to, link) {
   return deliver(to, subject, text, html);
 }
 
-// run once from the editor (Run ▶) after pasting: starts the every-minute run that watches for new students' LMS links
+// run once from the editor (Run ▶) after pasting: starts the every-minute run that watches for new students' LMS logins
 // (every 5 seconds while someone is waiting) and sends their email; it only replaces its own trigger, never any other
 function setupStudentEmailTrigger() {
   ScriptApp.getProjectTriggers().forEach(function (t) { if (t.getHandlerFunction() === 'sendPendingStudentEmails') ScriptApp.deleteTrigger(t); });
   ScriptApp.newTrigger('sendPendingStudentEmails').timeBased().everyMinutes(1).create();
-  Logger.log('Done: student emails are checked every minute, and every 5 seconds while a student is waiting for their link.');
+  Logger.log('Done: student emails are checked every minute, and every 5 seconds while a student is waiting for their login.');
 }
 
-// run from the editor to see the student email in your own inbox (with a sample link)
+// run from the editor to see the student email in your own inbox (with a sample login)
 function testStudentMail() {
-  Logger.log(sendStudentMail(Session.getEffectiveUser().getEmail(), 'https://cvlms.codevidhya.com/local/leadsync/sso.php?token=SAMPLE'));
+  Logger.log(sendStudentMail(Session.getEffectiveUser().getEmail(), { userId: 'student@example.com', password: 'Sample@123' }));
+}
+
+// run from the editor to check the LMS sheet has what the student email needs
+function checkLmsLogins() {
+  const logins = lmsLogins();
+  const n = Object.keys(logins).length;
+  Logger.log(n ? n + ' students in the LMS sheet have a password, e.g. user ID ' + logins[Object.keys(logins)[0]].userId
+    : 'No passwords found: the LMS sheet needs a "Password" column (and optionally "Username") filled in by the LMS.');
 }
 
 // mentor registration email; returns a short status for the sheet's "Email sent" column
