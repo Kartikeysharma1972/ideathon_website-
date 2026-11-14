@@ -83,10 +83,16 @@ function doPost(e) {
 // ---------- student registration email ----------
 // Each student's email carries their own aptitude test link, which the LMS writes into the LMS sheet's "LMS Link" column
 // about a minute after we add the student there. So on registration every student waits in the "Student emails" tab,
-// and sendPendingStudentEmails (run every minute by the trigger from setupStudentEmailTrigger) sends the email
-// as soon as their link appears. The tab shows each student's link and what happened to their email.
+// and sendPendingStudentEmails sends the email as soon as their link appears. The tab shows each student's link and
+// what happened to their email.
+// Google runs a timed trigger at most once a minute, so each run keeps checking every FAST_CHECK_SECONDS while a student
+// who registered in the last few minutes is still waiting: the email goes out within seconds of the link appearing.
 const STUDENT_EMAIL_HEADERS = ['Registration ID', 'Queued at', 'Student name', 'Email', 'Class', 'Aptitude test link', 'Email status', 'Sent at'];
 const WAITING_FOR_LINK = 'Waiting for LMS link';
+const FAST_CHECK_SECONDS = 5;
+// the trigger's running time is capped at this many minutes a day, well under Google's 6 hours a day of trigger time;
+// after the cap, waiting students are still checked once a minute, just not every 5 seconds
+const FAST_CHECK_MINUTES_PER_DAY = 240;
 // a student whose link has not appeared after this long is marked for someone to check by hand
 const GIVE_UP_HOURS = 24;
 
@@ -99,44 +105,68 @@ function queueStudentEmails(id, members) {
   });
 }
 
+// run every minute by the trigger from setupStudentEmailTrigger
 function sendPendingStudentEmails() {
   if (!SEND_STUDENT_EMAILS) return;
+  const props = PropertiesService.getScriptProperties();
+  // a run that is still busy is not started a second time by the next minute's trigger
+  if (Number(props.getProperty('studentMailBusyUntil') || 0) > Date.now()) return;
+  props.setProperty('studentMailBusyUntil', String(Date.now() + 5 * 60 * 1000));
+  const started = Date.now();
+  try {
+    while (sendWaitingStudentEmails() && Date.now() - started < 50 * 1000 && fastCheckAllowed(props)) {
+      Utilities.sleep(FAST_CHECK_SECONDS * 1000);
+    }
+  } finally {
+    addTriggerTime(props, Date.now() - started);
+    props.deleteProperty('studentMailBusyUntil');
+  }
+}
+
+// one pass: emails every waiting student whose link is now in the LMS sheet;
+// returns how many students who registered in the last 5 minutes are still waiting for theirs
+function sendWaitingStudentEmails() {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Student emails');
-  if (!sheet || sheet.getLastRow() < 2) return;
+  if (!sheet || sheet.getLastRow() < 2) return 0;
   const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, STUDENT_EMAIL_HEADERS.length).getValues();
   const at = name => STUDENT_EMAIL_HEADERS.indexOf(name);
   const waiting = [];
   rows.forEach(function (r, i) { if (r[at('Email status')] === WAITING_FOR_LINK) waiting.push(i); });
-  if (!waiting.length) return;
-  // a run that is still busy sending is not started a second time by the next minute's trigger
-  const props = PropertiesService.getScriptProperties();
-  if (Number(props.getProperty('studentMailBusyUntil') || 0) > Date.now()) return;
-  props.setProperty('studentMailBusyUntil', String(Date.now() + 5 * 60 * 1000));
-  try {
-    const links = lmsLinks();
-    // one email per address, even when a parent's email is shared by two students
-    const emailed = {};
-    rows.forEach(function (r) { if (/^Sent/.test(r[at('Email status')])) emailed[String(r[at('Email')]).toLowerCase()] = true; });
-    const started = Date.now();
-    for (let k = 0; k < waiting.length; k++) {
-      if (Date.now() - started > 4 * 60 * 1000) break; // the rest go in the next run, well within Google's 6-minute limit
-      const i = waiting[k], r = rows[i], row = i + 2;
-      const email = String(r[at('Email')]).trim().toLowerCase();
-      if (emailed[email]) { sheet.getRange(row, at('Email status') + 1).setValue('Same email already sent'); continue; }
-      const link = links[email];
-      if (!link) {
-        if (Date.now() - new Date(r[at('Queued at')]).getTime() > GIVE_UP_HOURS * 3600 * 1000) {
-          sheet.getRange(row, at('Email status') + 1).setValue('No LMS link after ' + GIVE_UP_HOURS + ' hours: check the LMS sheet');
-        }
-        continue;
-      }
-      const status = sendStudentMail(email, link);
-      sheet.getRange(row, at('Aptitude test link') + 1, 1, 3).setValues([[link, status, new Date()]]);
-      if (/^Sent/.test(status)) emailed[email] = true;
+  if (!waiting.length) return 0;
+  const links = lmsLinks();
+  // one email per address, even when a parent's email is shared by two students
+  const emailed = {};
+  rows.forEach(function (r) { if (/^Sent/.test(r[at('Email status')])) emailed[String(r[at('Email')]).toLowerCase()] = true; });
+  const started = Date.now();
+  let recent = 0;
+  for (let k = 0; k < waiting.length; k++) {
+    if (Date.now() - started > 4 * 60 * 1000) break; // the rest go in the next run, well within Google's 6-minute limit
+    const i = waiting[k], r = rows[i], row = i + 2;
+    const email = String(r[at('Email')]).trim().toLowerCase();
+    if (emailed[email]) { sheet.getRange(row, at('Email status') + 1).setValue('Same email already sent'); continue; }
+    const link = links[email];
+    if (!link) {
+      const age = Date.now() - new Date(r[at('Queued at')]).getTime();
+      if (age > GIVE_UP_HOURS * 3600 * 1000) sheet.getRange(row, at('Email status') + 1).setValue('No LMS link after ' + GIVE_UP_HOURS + ' hours: check the LMS sheet');
+      else if (age < 5 * 60 * 1000) recent++;
+      continue;
     }
-  } finally {
-    props.deleteProperty('studentMailBusyUntil');
+    const status = sendStudentMail(email, link);
+    sheet.getRange(row, at('Aptitude test link') + 1, 1, 3).setValues([[link, status, new Date()]]);
+    if (/^Sent/.test(status)) emailed[email] = true;
   }
+  return recent;
+}
+
+// the trigger's running time today (India time), so the 5-second checks stop before Google's daily limit
+function fastCheckAllowed(props) {
+  const today = Utilities.formatDate(new Date(), 'Asia/Kolkata', 'yyyy-MM-dd');
+  return props.getProperty('triggerTimeDay') !== today || Number(props.getProperty('triggerTimeMs') || 0) < FAST_CHECK_MINUTES_PER_DAY * 60 * 1000;
+}
+function addTriggerTime(props, ms) {
+  const today = Utilities.formatDate(new Date(), 'Asia/Kolkata', 'yyyy-MM-dd');
+  const used = props.getProperty('triggerTimeDay') === today ? Number(props.getProperty('triggerTimeMs') || 0) : 0;
+  props.setProperties({ triggerTimeDay: today, triggerTimeMs: String(used + ms) });
 }
 
 // email → LMS link, from the LMS sheet (columns found by their headers; a link may be plain text or a hyperlink)
