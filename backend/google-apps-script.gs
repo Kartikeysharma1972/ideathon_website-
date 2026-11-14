@@ -207,7 +207,7 @@ function sendStudentMail(to, login) {
     p('Login here: <a href="' + LMS_LOGIN_URL + '">' + LMS_LOGIN_URL + '</a><br>User ID: <b>' + esc(login.userId) + '</b><br>Password: <b>' + esc(login.password) + '</b><br>Deadline: <b>' + TEST_DEADLINE + '</b>') +
     p('Please ensure that you complete the test within the given deadline. Keep your user ID and password private.') +
     p('Thank you for being a part of the MIIC × Codevidhya Ideathon. For any queries reach out to <a href="mailto:' + CONTACT_EMAIL + '">' + CONTACT_EMAIL + '</a>.') +
-    p('Best regards,<br>Team Codevidhya<br>MIIC × Codevidhya Ideathon') + '</div>';
+    p('Best Regards,<br>Team Codevidhya<br>MIIC × Codevidhya Ideathon') + '</div>';
   const text = html.replace(/<a href="[^"]*">([^<]*)<\/a>/g, '$1').replace(/<\/p>/g, '\n\n').replace(/<br>/g, '\n').replace(/<[^>]+>/g, '')
     .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
   return deliver(to, subject, text, html);
@@ -258,7 +258,7 @@ function sendMentorMail(id, d) {
     ['ul', ['A certificate for your contribution, plus free goodies as a thank-you', 'Real leadership experience guiding a team from idea to pitch', 'Connections across MIIC, Codevidhya and partner schools']],
     ['p', 'If you have any questions or your availability changes, write to us at <b>' + CONTACT_EMAIL + '</b>.'],
     ['p', 'Thank you for helping young innovators turn a spark into something real!'],
-    ['p', 'Warm regards,<br>' + SIGN_OFF],
+    ['p', 'Warm Regards,<br>' + SIGN_OFF],
     ['small', 'Mentor registration ID: ' + id]
   ];
   const html = '<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.55;color:#1d2433;max-width:620px">' + sections.map(function (s) {
