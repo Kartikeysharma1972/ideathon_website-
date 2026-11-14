@@ -97,8 +97,9 @@ const FAST_CHECK_SECONDS = 5;
 // the trigger's running time is capped at this many minutes a day, well under Google's 6 hours a day of trigger time;
 // after the cap, waiting students are still checked once a minute, just not every 5 seconds
 const FAST_CHECK_MINUTES_PER_DAY = 240;
-// a student whose link has not appeared after this long is marked for someone to check by hand
-const GIVE_UP_HOURS = 24;
+// a student whose login has not appeared after this long is marked for someone to check by hand
+// (7 days, so students who register while the LMS is down still get their email once it is back)
+const GIVE_UP_HOURS = 168;
 
 function queueStudentEmails(id, members) {
   const sheet = sheetFor('Student emails', STUDENT_EMAIL_HEADERS);
