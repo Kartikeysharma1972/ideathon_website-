@@ -206,11 +206,12 @@ function sendStudentMail(to, link) {
   return deliver(to, subject, text, html);
 }
 
-// run once from the editor (Run ▶) after pasting: checks for new students' LMS links every minute and sends their email
+// run once from the editor (Run ▶) after pasting: starts the every-minute run that watches for new students' LMS links
+// (every 5 seconds while someone is waiting) and sends their email; it only replaces its own trigger, never any other
 function setupStudentEmailTrigger() {
   ScriptApp.getProjectTriggers().forEach(function (t) { if (t.getHandlerFunction() === 'sendPendingStudentEmails') ScriptApp.deleteTrigger(t); });
   ScriptApp.newTrigger('sendPendingStudentEmails').timeBased().everyMinutes(1).create();
-  Logger.log('Done: student emails are checked every minute.');
+  Logger.log('Done: student emails are checked every minute, and every 5 seconds while a student is waiting for their link.');
 }
 
 // run from the editor to see the student email in your own inbox (with a sample link)
