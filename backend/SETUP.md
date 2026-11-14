@@ -59,3 +59,11 @@ The 3D models are already compressed (about 1.9 MB in total). Three server setti
 - The coordinator is emailed the organization's student link, `https://live.codevidhya.com/ideathon-2026/register.html?org=ORG26-0001` (`SEND_ORG_EMAILS`, sent from head office like the mentor email; the **Email sent** column shows what happened).
 - A student who opens that link sees the organization's name, gets the school (for schools) and city filled in, and their registration is tagged in the Teams tab's last column, **Organization ID**. The organization's **Students registered** count goes up by the number of students in the registration.
 - The website looks up an organization with `GET <web app URL>?org=ORG26-0001`, which returns only its ID, type, name and city.
+
+## Student registration email (with the student's own test link)
+
+- Every registered student gets one email (from head office, replies to `CONTACT_EMAIL`) with their own **Stage 1 aptitude test link**: the link the LMS writes into the LMS sheet's **LMS Link** column about a minute after the student is added there. The deadline in the email is `TEST_DEADLINE`.
+- Because the link comes a minute later, each student first waits in the **Student emails** tab (status *Waiting for LMS link*). `sendPendingStudentEmails` runs every minute, finds the link by email, sends the email and fills in the link, status and time.
+- **One-time setup:** after pasting the script, run `setupStudentEmailTrigger` once from the editor (▶ Run) and allow the permissions. `testStudentMail` sends a sample to your own inbox.
+- Two students with the same email get one email (the second row says *Same email already sent*). A student whose link has not appeared after 24 hours is marked *No LMS link after 24 hours*; fix the LMS sheet, then change that status back to `Waiting for LMS link` to send it.
+- `SEND_STUDENT_EMAILS = false` stops new students from being queued and pauses sending.

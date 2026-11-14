@@ -2,7 +2,9 @@
  * Ideathon 2026 registrations → Google Sheet.
  * Receives student registrations (individual or team), mentor registrations and organization (school) registrations from the
  * website (forms.js) and appends one row each to the "Teams", "Mentors" or "Organizations" tab of the spreadsheet this script is bound to,
- * and emails a thank-you note to the address they gave (mentors and students are switched on separately below).
+ * and emails a confirmation to the address they gave (students, mentors and organizations are switched on separately below).
+ * A student's email carries their own Stage 1 aptitude test link, which the LMS writes into the LMS sheet about a minute
+ * after they register; see "Student registration email" below.
  * Setup: see backend/SETUP.md.
  */
 const TEAM_HEADERS = [
@@ -27,9 +29,8 @@ const PROFILE_FOLDER = 'Ideathon 2026 Mentor Profiles';
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 const FILE_TYPES = /\.(pdf|docx?|jpe?g|png)$/i;
 
-// thank-you emails, switched on separately (publish a new version after changing):
-// students are OFF for now (registrations are only saved); mentors get the registration email.
-const SEND_STUDENT_EMAILS = false;
+// confirmation emails, switched on separately (publish a new version after changing)
+const SEND_STUDENT_EMAILS = true;
 const SEND_MENTOR_EMAILS = true;
 // the organization's coordinator gets their students' registration link by email
 const SEND_ORG_EMAILS = true;
@@ -39,13 +40,10 @@ const SITE_URL = 'https://live.codevidhya.com/ideathon-2026/';
 // has it added as a "Send mail as" address; otherwise they go from the owner's account with replies to it
 const SEND_FROM = 'headoffice.codevidhya@codevidhya.com';
 
-// thank-you emails: fill these in before the test date is announced (blank = the line is left out)
-const TEST_DATE = '';      // e.g. '15 December 2026'
-const TEST_TIME = '';      // e.g. '11:00 am'
-// the thank-you emails' reply-to and contact address (the website footer keeps support@)
+// the last day to take the Stage 1 aptitude test, as written in the student email
+const TEST_DEADLINE = '7th December 2026';
+// the emails' reply-to and contact address
 const CONTACT_EMAIL = 'support@codevidhya.com';
-const CONTACT_PHONE = '';  // e.g. '+91 98xxx xxxxx'
-const LMS_URL = 'https://cvlms.codevidhya.com/';
 const SIGN_OFF = 'Team MIIC × Codevidhya Ideathon 2026';
 
 // every registered student (the individual, or each team member) is also added to the LMS sheet as Email | Name | Class;
@@ -67,13 +65,13 @@ function doPost(e) {
     if (!isMentor) {
       sheet.getRange(row, TEAM_HEADERS.indexOf('Added to LMS sheet') + 1).setValue(addToLmsSheet(data.members || []));
       countForOrganization((data.team || {}).orgId, (data.members || []).length);
+      if (SEND_STUDENT_EMAILS) queueStudentEmails(id, data.members || []);
     }
     lock.releaseLock();
     if (isMentor && SEND_MENTOR_EMAILS) {
       // the last column records what happened, so a failed email is visible in the sheet
       sheet.getRange(row, MENTOR_HEADERS.length).setValue(sendMentorMail(id, data));
     }
-    if (!isMentor && SEND_STUDENT_EMAILS) sendThankYou(false, data);
     return json({ ok: true, id: id });
   } catch (err) {
     return json({ ok: false, error: String(err) });
@@ -82,45 +80,112 @@ function doPost(e) {
   }
 }
 
-// a failed email never fails the registration; the row is already saved
-function sendThankYou(isMentor, d) {
-  const people = isMentor ? [{ name: d.name, email: d.email }] : (d.members || []);
-  const sent = {};
-  people.forEach(function (p) {
-    const to = String(p.email || '').trim().toLowerCase();
-    // one email per address, even when a parent's email is shared by two students
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to) || sent[to]) return;
-    sent[to] = true;
-    const mail = thankYouMail(isMentor, String(p.name || 'there').trim());
-    try {
-      MailApp.sendEmail({ to: to, subject: mail.subject, name: SIGN_OFF, replyTo: CONTACT_EMAIL,
-        body: mail.body.concat(['Warm regards,\n' + SIGN_OFF]).join('\n\n') });
-    } catch (err) { /* daily email quota reached or mail not authorised */ }
+// ---------- student registration email ----------
+// Each student's email carries their own aptitude test link, which the LMS writes into the LMS sheet's "LMS Link" column
+// about a minute after we add the student there. So on registration every student waits in the "Student emails" tab,
+// and sendPendingStudentEmails (run every minute by the trigger from setupStudentEmailTrigger) sends the email
+// as soon as their link appears. The tab shows each student's link and what happened to their email.
+const STUDENT_EMAIL_HEADERS = ['Registration ID', 'Queued at', 'Student name', 'Email', 'Class', 'Aptitude test link', 'Email status', 'Sent at'];
+const WAITING_FOR_LINK = 'Waiting for LMS link';
+// a student whose link has not appeared after this long is marked for someone to check by hand
+const GIVE_UP_HOURS = 24;
+
+function queueStudentEmails(id, members) {
+  const sheet = sheetFor('Student emails', STUDENT_EMAIL_HEADERS);
+  members.forEach(function (m) {
+    const email = String(m.email || '').trim().toLowerCase();
+    if (!email) return;
+    sheet.appendRow([id, new Date(), clean(String(m.name || '').trim()), clean(email), m.class ? 'Class ' + clean(m.class) : '', '', WAITING_FOR_LINK, '']);
   });
 }
 
-function thankYouMail(isMentor, name) {
-  const contact = CONTACT_EMAIL + (CONTACT_PHONE ? ' or call ' + CONTACT_PHONE : '');
-  return isMentor ? {
-    subject: 'Thank you for registering as a mentor: Codevidhya x MNIT Ideathon',
-    body: [
-      'Hi ' + name + ',',
-      'Thank you for registering as a mentor for the Codevidhya x MNIT Ideathon. We’re glad to have you with us.',
-      'You will be paired with a school team and guide them through Round 2 (online), helping them sharpen their ideas and giving feedback on their report and pitch. We will contact you soon with your team details and the other information you need.',
-      'For any questions, reach us at ' + contact + '.'
-    ]
-  } : {
-    subject: 'Thank you for registering: Codevidhya x MNIT Ideathon',
-    body: [
-      'Hi ' + name + ',',
-      'Thank you for registering for the Codevidhya x MNIT Ideathon. We’re so happy to have you with us!',
-      'Your first step is the online aptitude test (Round 1: Think), which will be conducted on our LMS. You can log in here with your registered email id: ' + LMS_URL,
-      (TEST_DATE ? 'The test will be held on ' + TEST_DATE + (TEST_TIME ? ' at ' + TEST_TIME : '') + '.' : 'We will share the test date and time with you soon.') +
-        ' Please make sure you have a stable internet connection and a quiet spot to sit. There is no need to stress, as the test is just a fun way to see how you think.',
-      'If you have any questions, ask a parent or teacher to write to us at ' + contact + '.',
-      'See you at the test!'
-    ]
-  };
+function sendPendingStudentEmails() {
+  if (!SEND_STUDENT_EMAILS) return;
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Student emails');
+  if (!sheet || sheet.getLastRow() < 2) return;
+  const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, STUDENT_EMAIL_HEADERS.length).getValues();
+  const at = name => STUDENT_EMAIL_HEADERS.indexOf(name);
+  const waiting = [];
+  rows.forEach(function (r, i) { if (r[at('Email status')] === WAITING_FOR_LINK) waiting.push(i); });
+  if (!waiting.length) return;
+  // a run that is still busy sending is not started a second time by the next minute's trigger
+  const props = PropertiesService.getScriptProperties();
+  if (Number(props.getProperty('studentMailBusyUntil') || 0) > Date.now()) return;
+  props.setProperty('studentMailBusyUntil', String(Date.now() + 5 * 60 * 1000));
+  try {
+    const links = lmsLinks();
+    // one email per address, even when a parent's email is shared by two students
+    const emailed = {};
+    rows.forEach(function (r) { if (/^Sent/.test(r[at('Email status')])) emailed[String(r[at('Email')]).toLowerCase()] = true; });
+    const started = Date.now();
+    for (let k = 0; k < waiting.length; k++) {
+      if (Date.now() - started > 4 * 60 * 1000) break; // the rest go in the next run, well within Google's 6-minute limit
+      const i = waiting[k], r = rows[i], row = i + 2;
+      const email = String(r[at('Email')]).trim().toLowerCase();
+      if (emailed[email]) { sheet.getRange(row, at('Email status') + 1).setValue('Same email already sent'); continue; }
+      const link = links[email];
+      if (!link) {
+        if (Date.now() - new Date(r[at('Queued at')]).getTime() > GIVE_UP_HOURS * 3600 * 1000) {
+          sheet.getRange(row, at('Email status') + 1).setValue('No LMS link after ' + GIVE_UP_HOURS + ' hours: check the LMS sheet');
+        }
+        continue;
+      }
+      const status = sendStudentMail(email, link);
+      sheet.getRange(row, at('Aptitude test link') + 1, 1, 3).setValues([[link, status, new Date()]]);
+      if (/^Sent/.test(status)) emailed[email] = true;
+    }
+  } finally {
+    props.deleteProperty('studentMailBusyUntil');
+  }
+}
+
+// email → LMS link, from the LMS sheet (columns found by their headers; a link may be plain text or a hyperlink)
+function lmsLinks() {
+  const out = {};
+  if (!LMS_SHEET_URL) return out;
+  const sheet = lmsSheet();
+  const values = sheet.getDataRange().getValues();
+  const head = values[0].map(function (h) { return String(h).trim().toLowerCase(); });
+  const ce = head.indexOf('email'), cl = head.indexOf('lms link');
+  if (ce < 0 || cl < 0 || values.length < 2) return out;
+  const rich = sheet.getRange(2, cl + 1, values.length - 1, 1).getRichTextValues();
+  values.slice(1).forEach(function (r, i) {
+    let link = String(r[cl]).trim();
+    if (!/^https?:\/\//.test(link)) link = (rich[i][0] && rich[i][0].getLinkUrl()) || '';
+    if (/^https?:\/\//.test(link)) out[String(r[ce]).trim().toLowerCase()] = link;
+  });
+  return out;
+}
+
+function sendStudentMail(to, link) {
+  const deadlineDay = TEST_DEADLINE.replace(/\s+\d{4}$/, '');
+  const subject = 'Registration confirmed: complete your Stage 1 Aptitude Test | MIIC × Codevidhya Ideathon';
+  const p = text => '<p style="margin:0 0 12px">' + text + '</p>';
+  const html = '<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6;color:#1d2433;max-width:620px">' +
+    p('Dear Participant,') +
+    p('Thank you for registering for the <b>MIIC × Codevidhya Ideathon</b>!') +
+    p('This email is to confirm that your registration has been successfully received. We’re excited to have you participate in this innovation-driven journey.') +
+    p('To proceed further, please complete your <b>Stage 1 Aptitude Test</b> before <b>' + deadlineDay + '</b> to clear Stage 1 and move ahead in the selection process.') +
+    '<p style="margin:18px 0 6px"><b>Aptitude Test Details:</b></p>' +
+    p('Test Link: <a href="' + esc(link) + '">' + esc(link) + '</a><br>Deadline: <b>' + TEST_DEADLINE + '</b>') +
+    p('Please ensure that you complete the test within the given deadline.') +
+    p('Thank you for being a part of the MIIC × Codevidhya Ideathon. For any queries reach out to <a href="mailto:' + CONTACT_EMAIL + '">' + CONTACT_EMAIL + '</a>.') +
+    p('Best regards,<br>Team Codevidhya<br>MIIC × Codevidhya Ideathon') + '</div>';
+  const text = html.replace(/<a href="[^"]*">([^<]*)<\/a>/g, '$1').replace(/<\/p>/g, '\n\n').replace(/<br>/g, '\n').replace(/<[^>]+>/g, '')
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
+  return deliver(to, subject, text, html);
+}
+
+// run once from the editor (Run ▶) after pasting: checks for new students' LMS links every minute and sends their email
+function setupStudentEmailTrigger() {
+  ScriptApp.getProjectTriggers().forEach(function (t) { if (t.getHandlerFunction() === 'sendPendingStudentEmails') ScriptApp.deleteTrigger(t); });
+  ScriptApp.newTrigger('sendPendingStudentEmails').timeBased().everyMinutes(1).create();
+  Logger.log('Done: student emails are checked every minute.');
+}
+
+// run from the editor to see the student email in your own inbox (with a sample link)
+function testStudentMail() {
+  Logger.log(sendStudentMail(Session.getEffectiveUser().getEmail(), 'https://cvlms.codevidhya.com/local/leadsync/sso.php?token=SAMPLE'));
 }
 
 // mentor registration email; returns a short status for the sheet's "Email sent" column
