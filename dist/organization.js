@@ -22,7 +22,7 @@
   const NOT_ORG = /[^\p{L}\p{M}0-9 .,&'()/-]/gu;
   const NOT_PLACE = /[^\p{L}\p{M} .'()-]/gu;
   const FILTERS = {
-    orgName: NOT_ORG, head: NOT_NAME, coordName: NOT_NAME, designation: NOT_ORG, city: NOT_PLACE,
+    orgName: NOT_ORG, orgTypeOther: NOT_ORG, head: NOT_NAME, coordName: NOT_NAME, designation: NOT_ORG, city: NOT_PLACE,
     address: /[^\p{L}\p{M}0-9 .,&'()/#:-]/gu, coordEmail: /\s/g, phone: /\D/g, pincode: /\D/g, expected: /\D/g
   };
   form.phone.addEventListener('paste', e => {
@@ -66,11 +66,14 @@
     return '';
   }
 
-  // ---------- board only for schools ----------
+  // ---------- board only for schools; "Other" opens a box to type the type ----------
   const boardField = form.querySelector('[data-school-only]');
+  const otherType = form.orgTypeOther;
   form.querySelectorAll('input[name="orgType"]').forEach(r => r.addEventListener('change', () => {
     boardField.hidden = r.value !== 'School';
     if (boardField.hidden) form.querySelectorAll('input[name="board"]').forEach(b => { b.checked = false; });
+    otherType.hidden = r.value !== 'Other';
+    if (otherType.hidden) otherType.value = ''; else otherType.focus();
   }));
 
   // ---------- city: searchable list of Indian cities ----------
@@ -178,7 +181,9 @@
     const bad = [];
     const need = (field, problem) => { if (problem) { setError(field, problem); bad.push(field); } };
     const fieldOf = name => form.elements[name].closest('.field');
-    need(form.querySelector('[data-required-group="orgType"]'), checked('orgType').length ? '' : 'Choose the type of organization.');
+    const type = checked('orgType')[0], typed = val('orgTypeOther');
+    need(form.querySelector('[data-required-group="orgType"]'), !type ? 'Choose the type of organization.'
+      : type === 'Other' && (letters(typed) < 3 || repeated(typed)) ? 'Type your organization type, e.g. Science club.' : '');
     const n = val('orgName');
     need(fieldOf('orgName'), !n ? 'Add the organization’s full name.' : letters(n) < 3 || repeated(n) ? 'Type the organization’s full name.' : '');
     need(fieldOf('city'), city.problem());
@@ -215,7 +220,7 @@
   // ---------- submit ----------
   function collect() {
     return {
-      orgType: checked('orgType')[0] || '',
+      orgType: checked('orgType')[0] === 'Other' ? `Other: ${val('orgTypeOther')}` : checked('orgType')[0] || '',
       name: val('orgName'),
       board: checked('board')[0] || '',
       city: city.label(),
