@@ -52,6 +52,8 @@ const SIGN_OFF = 'Team MIIC × Codevidhya Ideathon 2026';
 // every registered student (the individual, or each team member) is also added to the LMS sheet as Email | Name | Class;
 // the LMS then fills in LMS Status and LMS Link there. Paste the link of that tab (with its #gid=...); blank = switched off.
 const LMS_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1Vh3GW6IfTiYdbB3_tl9_9Ni_xYLkuq_PTKGkq4Ozs6w/edit?gid=0#gid=0';
+// the student registrations tab of this spreadsheet (the #gid in its link); without it, the "Teams" tab is used
+const STUDENTS_TAB_GID = '1137941265';
 
 function doPost(e) {
   const lock = LockService.getScriptLock();
@@ -60,7 +62,7 @@ function doPost(e) {
     const data = JSON.parse(e.postData.contents);
     if (data.type === 'organization') return registerOrganization(lock, data);
     const isMentor = data.type === 'mentor';
-    const sheet = sheetFor(isMentor ? 'Mentors' : 'Teams', isMentor ? MENTOR_HEADERS : TEAM_HEADERS);
+    const sheet = isMentor ? sheetFor('Mentors', MENTOR_HEADERS) : studentsTab();
     const id = (isMentor ? 'MEN' : 'IDT') + '26-' + String(sheet.getLastRow()).padStart(4, '0');
     sheet.appendRow(isMentor ? mentorRow(id, data) : teamRow(id, data));
     const row = sheet.getLastRow();
@@ -305,29 +307,144 @@ function esc(v) {
 function addToLmsSheet(members) {
   if (!LMS_SHEET_URL) return 'Not set up';
   try {
-    const sheet = lmsSheet();
-    const head = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(function (h) { return String(h).trim().toLowerCase(); });
-    const ce = head.indexOf('email'), cn = head.indexOf('name'), cc = head.indexOf('class');
-    if (ce < 0 || cn < 0 || cc < 0) return 'Failed: the LMS sheet needs Email, Name and Class headers in row 1';
-    const last = sheet.getLastRow();
-    const existing = last > 1 ? sheet.getRange(2, ce + 1, last - 1, 1).getValues().map(function (r) { return String(r[0]).trim().toLowerCase(); }) : [];
-    const added = [], skipped = [];
-    members.forEach(function (m) {
+    const lms = lmsTarget();
+    if (lms.error) return 'Failed: ' + lms.error;
+    const skipped = [];
+    const added = members.filter(function (m) {
       const email = String(m.email || '').trim().toLowerCase();
-      if (!email) return;
-      if (existing.indexOf(email) >= 0) { skipped.push(email); return; }
-      const out = head.map(function () { return ''; });
-      out[ce] = clean(email);
-      out[cn] = clean(String(m.name || '').trim());
-      out[cc] = m.class ? 'Class ' + clean(m.class) : '';
-      sheet.appendRow(out);
-      existing.push(email);
-      added.push(email);
+      if (email && lms.has[email]) skipped.push(email);
+      return lms.add(m.email, m.name, m.class);
     });
+    lms.save();
     return 'Added ' + added.length + (skipped.length ? '; already there: ' + skipped.join(', ') : '');
   } catch (err) {
     return 'Failed: ' + String(err).slice(0, 200);
   }
+}
+
+// the LMS tab with its Email, Name and Class columns (found by their headers) and the emails already in it.
+// add() queues a student whose email is new and returns true; save() writes the queued rows in one go.
+function lmsTarget() {
+  const sheet = lmsSheet();
+  const head = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1)).getValues()[0].map(function (h) { return String(h).trim().toLowerCase(); });
+  const col = function (exact, test) {
+    if (head.indexOf(exact) >= 0) return head.indexOf(exact);
+    for (let i = 0; i < head.length; i++) if (test(head[i])) return i;
+    return -1;
+  };
+  const ce = col('email', function (h) { return h.indexOf('email') >= 0; });
+  const cn = col('name', function (h) { return h.indexOf('name') >= 0 && h.indexOf('user') < 0; });
+  const cc = col('class', function (h) { return h.indexOf('class') >= 0 || h.indexOf('grade') >= 0; });
+  if (ce < 0 || cn < 0 || cc < 0) return { error: 'the LMS sheet needs Email, Name and Class headers in row 1' };
+  const last = sheet.getLastRow();
+  const has = {};
+  if (last > 1) sheet.getRange(2, ce + 1, last - 1, 1).getValues().forEach(function (r) { has[String(r[0]).trim().toLowerCase()] = true; });
+  const rows = [];
+  return {
+    has: has,
+    add: function (email, name, grade) {
+      email = String(email || '').trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || has[email]) return false;
+      const out = head.map(function () { return ''; });
+      out[ce] = clean(email);
+      out[cn] = clean(String(name || '').trim());
+      grade = String(grade || '').trim();
+      out[cc] = !grade ? '' : /^class\b/i.test(grade) ? clean(grade) : 'Class ' + clean(grade);
+      rows.push(out);
+      has[email] = true;
+      return true;
+    },
+    save: function () {
+      if (rows.length) sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, head.length).setValues(rows);
+      return rows.length;
+    }
+  };
+}
+
+// copies every registered student who is not in the LMS sheet yet, as Email | Name | Class N: all earlier registrations,
+// and any that could not be added when they registered. It never adds an email twice, so it is safe to run any time;
+// setupLmsSync makes it run by itself every 5 minutes.
+function syncLmsSheet() {
+  if (!LMS_SHEET_URL) return 'Not set up';
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(30000)) return 'Busy: a registration is being saved; the next run picks it up';
+  try {
+    const lms = lmsTarget();
+    if (lms.error) { Logger.log('Failed: ' + lms.error); return 'Failed: ' + lms.error; }
+    let found = 0, added = 0;
+    studentTabs().forEach(function (tab) {
+      const values = tab.getDataRange().getDisplayValues();
+      if (values.length < 2) return;
+      const head = values[0].map(function (h) { return String(h).trim().toLowerCase(); });
+      const people = studentColumns(head);
+      const cs = head.indexOf('added to lms sheet');
+      const status = [];
+      values.slice(1).forEach(function (row, i) {
+        let n = 0;
+        people.forEach(function (p) {
+          if (!String(row[p.email]).trim()) return;
+          found++;
+          if (lms.add(row[p.email], p.name >= 0 ? row[p.name] : '', p.grade >= 0 ? row[p.grade] : '')) n++;
+        });
+        added += n;
+        status.push([n ? 'Added ' + n + ' by sync' : row[cs]]);
+      });
+      lms.save();
+      // the registration's "Added to LMS sheet" cell shows the students this run copied
+      if (cs >= 0 && status.some(function (s, i) { return s[0] !== values[i + 1][cs]; })) tab.getRange(2, cs + 1, status.length, 1).setValues(status);
+    });
+    const msg = 'Done: ' + found + ' student emails in the registrations, ' + added + ' newly added to the LMS sheet.';
+    Logger.log(msg);
+    return msg;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+// run once from the editor (Run ▶) after pasting: copies everyone registered so far to the LMS sheet now,
+// then keeps checking every 5 minutes
+function setupLmsSync() {
+  ScriptApp.getProjectTriggers().forEach(function (t) { if (t.getHandlerFunction() === 'syncLmsSheet') ScriptApp.deleteTrigger(t); });
+  ScriptApp.newTrigger('syncLmsSheet').timeBased().everyMinutes(5).create();
+  syncLmsSheet();
+}
+
+// for each student in a registration tab: the columns of their email, name and grade. A team tab has
+// "Captain / student email", "Student 2 email", ... with matching "… name" and "… grade" headers; a tab with a
+// single email column uses its name and class/grade columns.
+function studentColumns(head) {
+  const emails = [];
+  head.forEach(function (h, i) { if (/e-?mail/.test(h)) emails.push(i); });
+  return emails.map(function (ce) {
+    const prefix = head[ce].replace(/\s*e-?mail.*$/, '').trim();
+    const named = function (words) {
+      for (let w = 0; w < words.length; w++) if (head.indexOf((prefix + ' ' + words[w]).trim()) >= 0) return head.indexOf((prefix + ' ' + words[w]).trim());
+      return -1;
+    };
+    const any = function (test) { for (let i = 0; i < head.length; i++) if (test(head[i])) return i; return -1; };
+    let name = named(['name']), grade = named(['grade', 'class']);
+    if (emails.length === 1) {
+      if (name < 0) name = any(function (h) { return /name/.test(h) && !/user|team|school|organi/.test(h); });
+      if (grade < 0) grade = any(function (h) { return /class|grade/.test(h); });
+    }
+    return { email: ce, name: name, grade: grade };
+  });
+}
+
+// the tab students register into: the STUDENTS_TAB_GID tab when it has the registration columns, else "Teams"
+function studentsTab() {
+  const tab = SpreadsheetApp.getActiveSpreadsheet().getSheets().filter(function (t) { return String(t.getSheetId()) === STUDENTS_TAB_GID; })[0];
+  const ok = tab && tab.getLastColumn() > 0 && tab.getRange(1, 1, 1, tab.getLastColumn()).getValues()[0].indexOf('Captain / student email') >= 0;
+  return sheetFor(ok ? tab.getName() : 'Teams', TEAM_HEADERS);
+}
+
+// the tabs the sync reads students from: the STUDENTS_TAB_GID tab, "Teams" and "Students", whichever exist
+function studentTabs() {
+  const tabs = [];
+  SpreadsheetApp.getActiveSpreadsheet().getSheets().forEach(function (t) {
+    if (String(t.getSheetId()) === STUDENTS_TAB_GID || t.getName() === 'Teams' || t.getName() === 'Students') tabs.push(t);
+  });
+  return tabs;
 }
 
 function lmsSheet() {

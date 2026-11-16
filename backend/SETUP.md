@@ -60,6 +60,12 @@ The 3D models are already compressed (about 1.9 MB in total). Three server setti
 - A student who opens that link sees the organization's name, gets the school (for schools) and city filled in, and their registration is tagged in the Teams tab's last column, **Organization ID**. The organization's **Students registered** count goes up by the number of students in the registration.
 - The website looks up an organization with `GET <web app URL>?org=ORG26-0001`, which returns only its ID, type, name and city.
 
+## Students → LMS sheet
+
+- Every registered student (the individual, or each team member) is added to the LMS sheet (`LMS_SHEET_URL`) as **Email | Name | Class N** the moment they register; the registration's **Added to LMS sheet** cell shows what happened.
+- `syncLmsSheet` also runs every 5 minutes and copies anyone missing: all earlier registrations, and any that failed at the time (their cell then reads *Added N by sync*). An email already in the LMS sheet is never added again. It reads the `STUDENTS_TAB_GID` tab (plus any "Teams" / "Students" tab).
+- **One-time setup:** after pasting the script, run `setupLmsSync` once from the editor (▶ Run) and allow the permissions. It copies everyone registered so far straight away; the log shows how many were added.
+
 ## Student registration email (with the student's LMS user ID and password)
 
 - Every registered student gets one email (from head office, replies to `CONTACT_EMAIL`) with the LMS login page (`LMS_LOGIN_URL`) and their own **user ID and password** for the Stage 1 aptitude test. The deadline in the email is `TEST_DEADLINE`.
