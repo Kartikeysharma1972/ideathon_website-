@@ -282,4 +282,3 @@ html.pencil-on,html.pencil-on *{cursor:none!important}
   .org-link-row{flex-direction:column}
 }
 /* note on the success screen while LMS logins are emailed later */
-.done-login{max-width:460px;margin:16px auto 0;padding:12px 16px;border-radius:12px;background:#eef6ff;color:var(--ink);font-size:14px;border:1px solid #cfe3fb}
