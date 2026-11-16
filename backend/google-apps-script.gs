@@ -29,8 +29,9 @@ const PROFILE_FOLDER = 'Ideathon 2026 Mentor Profiles';
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 const FILE_TYPES = /\.(pdf|docx?|jpe?g|png)$/i;
 
-// confirmation emails, switched on separately (publish a new version after changing)
-const SEND_STUDENT_EMAILS = true;
+// confirmation emails, switched on separately (publish a new version after changing).
+// Student emails are OFF until the LMS login details are finalised; mentors and organizations still get theirs.
+const SEND_STUDENT_EMAILS = false;
 const SEND_MENTOR_EMAILS = true;
 // the organization's coordinator gets their students' registration link by email
 const SEND_ORG_EMAILS = true;
