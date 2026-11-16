@@ -29,11 +29,11 @@
     'Mind Matrix', 'Rising Stars', 'Skyline Squad', 'The Disruptors', 'Gear Heads', 'Spark Plug', 'Alpha Minds', 'Vision Valley', 'Tech Sparks', 'Orbit Crew',
     'Thinkers Inc', 'Young Founders', 'Smart Hive', 'Future Ready', 'Bright Bulbs', 'Code Red', 'Starlight Squad', 'Brave Builders', 'Mind Sprint', 'Cosmic Coders'
   ];
-  // a team is 2 to 6 students; an individual innovator is just one
-  const TEAM_MIN = 2, MAX_MEMBERS = 6, MAX_CUSTOM_DOMAINS = 5;
+  // a team is 1 to 6 students (it starts with 2 places); an individual innovator is just one
+  const TEAM_MIN = 1, MAX_MEMBERS = 6, MAX_CUSTOM_DOMAINS = 5;
   let current = 0;
   let joinType = '';
-  let teamCount = TEAM_MIN;
+  let teamCount = 2;
   const isTeam = () => joinType === 'team';
   const count = () => (isTeam() ? teamCount : joinType ? 1 : 0);
 
