@@ -414,7 +414,7 @@
           need(fieldOf(`m${i}_name`), nameIssue);
           // the LMS makes one login per email, so two students can't share one
           let emailIssue = emailProblem(m.email);
-          if (!emailIssue && seenEmail.has(m.email.toLowerCase())) emailIssue = 'Each student needs a different email ID. A parent’s email can be used for one student only.';
+          if (!emailIssue && seenEmail.has(m.email.toLowerCase())) emailIssue = 'Error: Each student needs a different email ID.';
           seenEmail.add(m.email.toLowerCase());
           need(fieldOf(`m${i}_email`), emailIssue);
           need(memberNode(i).querySelector('.class-field'), m.cls ? '' : 'Tap the grade.');
