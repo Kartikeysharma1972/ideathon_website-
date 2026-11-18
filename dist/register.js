@@ -404,7 +404,7 @@
     if (n === 0) {
       need(form.querySelector('[data-join-field]'), joinType ? '' : 'Choose “Individual innovator” or “We are a team”.');
       if (joinType) {
-        const seen = new Set();
+        const seen = new Set(), seenEmail = new Set();
         for (let i = 1; i <= count(); i++) {
           const m = getMember(i);
           const who = !isTeam() ? 'your' : i === 1 ? 'the captain’s' : `student ${i}’s`;
@@ -412,7 +412,11 @@
           if (!nameIssue && seen.has(m.name.toLowerCase())) nameIssue = 'This student is already added.';
           seen.add(m.name.toLowerCase());
           need(fieldOf(`m${i}_name`), nameIssue);
-          need(fieldOf(`m${i}_email`), emailProblem(m.email));
+          // the LMS makes one login per email, so two students can't share one
+          let emailIssue = emailProblem(m.email);
+          if (!emailIssue && seenEmail.has(m.email.toLowerCase())) emailIssue = 'Each student needs a different email ID. A parent’s email can be used for one student only.';
+          seenEmail.add(m.email.toLowerCase());
+          need(fieldOf(`m${i}_email`), emailIssue);
           need(memberNode(i).querySelector('.class-field'), m.cls ? '' : 'Tap the grade.');
         }
         if (isTeam()) {
