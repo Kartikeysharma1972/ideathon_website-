@@ -1,9 +1,10 @@
 /**
  * Ideathon 2026 daily registration report, emailed as cards: students registered till date and on the day, by city,
  * school / organization and category. Paste it as a NEW file (+ → Script, name it "DailyReport") in the registration
- * sheet's Apps Script project, next to the main script, whose deliver(), esc() and studentsTab() it uses.
+ * sheet's Apps Script project, next to the main script, whose esc() and studentsTab() it uses.
+ * The report is sent from the account that runs it: run everything below from your own account.
  * Test: run testDailyReport (▶ Run); the report comes to your own inbox only.
- * Go live: set REPORT_TO, then run setupDailyReport once from your own account (not anyone else's, so it sends from head office).
+ * Go live: set REPORT_TO, then run setupDailyReport once from your own account.
  */
 // who gets the daily report, comma separated; blank = only the account that runs it
 const REPORT_TO = '';
@@ -36,7 +37,9 @@ function sendReportTo(to) {
   const text = 'Ideathon 2026 registrations\n\n' + r.dayLabel + ': ' + r.day.students + ' students in ' + r.day.regs + ' registrations\n' +
     'Till date: ' + r.all.students + ' students in ' + r.all.regs + ' registrations, from ' + r.all.cities.length + ' cities\n\n' +
     'Top cities: ' + r.all.cities.slice(0, 5).map(function (c) { return c[0] + ' ' + c[1]; }).join(', ');
-  return deliver(to, subject, text, reportHtml(r));
+  // sent from the account that runs it (yours), not from head office
+  GmailApp.sendEmail(to, subject, text, { htmlBody: reportHtml(r) });
+  return 'Sent from ' + Session.getEffectiveUser().getEmail();
 }
 
 // counts the student registrations tab: everything till date, and the report's day (with the day before it to compare)
