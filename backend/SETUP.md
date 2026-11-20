@@ -75,3 +75,10 @@ The 3D models are already compressed (about 1.9 MB in total). Three server setti
 - Two students with the same email get one email (the second row says *Same email already sent*). A student whose login has not appeared after 7 days (`GIVE_UP_HOURS`) is marked *No LMS login after 168 hours*; fix the LMS sheet, then change that status back to `Waiting for LMS login` to send it.
 - `SEND_STUDENT_EMAILS = false` stops new students from being queued and pauses sending.
 - The "Your access to Codevidhya…" email with a login link is sent by the LMS itself, not by this script; switch it off in the LMS if it is not wanted.
+
+## Daily registration report (email with cards)
+
+- `backend/daily-report.gs` emails a daily report: students registered on the day and till date, with cities, schools / organizations and Junior / Senior split. Paste it as a **new file** in the registration sheet's Apps Script project (+ → Script, name it "DailyReport"), next to the main script.
+- **Test:** run `testDailyReport` (▶ Run). The report comes to your own inbox only.
+- **Go live:** put the recipients in `REPORT_TO` (comma separated) and run `setupDailyReport` once **from your own account**, so it sends from head office. It goes out every day around `REPORT_HOUR` (India time, default 9 AM). Before noon it covers yesterday's full day; from noon on it covers today so far.
+- Students are counted per person, and rows that look like tests (an email or name with "test", `@example.` or `@demo.`) are left out.
