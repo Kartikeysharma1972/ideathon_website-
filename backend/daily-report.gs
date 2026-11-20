@@ -4,13 +4,15 @@
  * sheet's Apps Script project, next to the main script, whose esc() and studentsTab() it uses.
  * The report is sent from the account that runs it: run everything below from your own account.
  * Test: run testDailyReport (▶ Run); the report comes to your own inbox only.
+ * Send it once to REPORT_TO now: run sendDailyReport.
  * Go live: set REPORT_TO, then run setupDailyReport once from your own account.
  */
-// who gets the daily report, comma separated; blank = only the account that runs it
+// who gets the daily report, comma separated, e.g. 'one@codevidhya.com, two@codevidhya.com'; blank = only the account that runs it
 const REPORT_TO = '';
-// the hour (India time, 0-23) the report goes out; Google sends it within about 15 minutes of it.
+// the time (India time, 24-hour) the report goes out every day.
 // Before noon the report covers yesterday's full day, from noon on it covers today so far.
 const REPORT_HOUR = 9;
+const REPORT_MINUTE = 0;
 // rows whose email, name or team name look like a test are left out of the numbers
 const REPORT_TEST_ROW = /(^|[^a-z])test|@(example|demo)\.|^dummy/i;
 
@@ -20,13 +22,33 @@ function testDailyReport() {
   Logger.log(sendReportTo(me) + ' (to ' + me + ')');
 }
 
-// run once from the editor: sends the report every day at REPORT_HOUR, India time
+// run once from the editor: sends the report every day at REPORT_HOUR:REPORT_MINUTE, India time.
+// Google's daily timer can be up to 15 minutes late, so each report books a one-time timer for the next day's exact time.
 function setupDailyReport() {
-  ScriptApp.getProjectTriggers().forEach(function (t) { if (t.getHandlerFunction() === 'sendDailyReport') ScriptApp.deleteTrigger(t); });
-  ScriptApp.newTrigger('sendDailyReport').timeBased().everyDays(1).atHour(REPORT_HOUR).nearMinute(0).inTimezone('Asia/Kolkata').create();
-  Logger.log('Done: the report goes to ' + (REPORT_TO || Session.getEffectiveUser().getEmail()) + ' every day around ' + REPORT_HOUR + ':00 India time.');
+  const next = scheduleNextReport();
+  Logger.log('Done: the report goes to ' + (REPORT_TO || Session.getEffectiveUser().getEmail()) + ' every day at ' +
+    Utilities.formatDate(next, 'Asia/Kolkata', 'h:mm a') + ' India time. First one: ' + Utilities.formatDate(next, 'Asia/Kolkata', 'd MMM yyyy, h:mm a') + '.');
 }
 
+// the timer's run: books tomorrow's report first (so one failed send never stops the daily reports), then sends today's
+function dailyReportTimer() {
+  scheduleNextReport();
+  sendDailyReport();
+}
+
+// replaces the report timer with a one-time timer at the next REPORT_HOUR:REPORT_MINUTE, India time
+function scheduleNextReport() {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === 'dailyReportTimer' || t.getHandlerFunction() === 'sendDailyReport') ScriptApp.deleteTrigger(t);
+  });
+  const IST = 5.5 * 3600e3, now = Date.now(), ist = new Date(now + IST);
+  let next = Date.UTC(ist.getUTCFullYear(), ist.getUTCMonth(), ist.getUTCDate(), REPORT_HOUR, REPORT_MINUTE) - IST;
+  if (next <= now + 60e3) next += 864e5;
+  ScriptApp.newTrigger('dailyReportTimer').timeBased().at(new Date(next)).create();
+  return new Date(next);
+}
+
+// sends the report once to REPORT_TO (or to you when it is blank)
 function sendDailyReport() {
   return sendReportTo(REPORT_TO || Session.getEffectiveUser().getEmail());
 }
