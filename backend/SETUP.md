@@ -82,3 +82,14 @@ The 3D models are already compressed (about 1.9 MB in total). Three server setti
 - **Test:** run `testDailyReport` (▶ Run). The report comes to your own inbox only.
 - **Go live:** put the recipients in `REPORT_TO` (comma separated) and run `setupDailyReport` once **from your own account**; the report is sent from the account that runs it (yours). It goes out every day at `REPORT_HOUR:REPORT_MINUTE` India time (default 9:00 AM): each report books a one-time timer for the next day's exact time, since Google's daily timer can be up to 15 minutes late. Before noon it covers yesterday's full day; from noon on it covers today so far. `sendDailyReport` sends it once to `REPORT_TO` right away.
 - Students are counted per person, and rows that look like tests (an email or name with "test", `@example.` or `@demo.`) are left out.
+
+## Round 1 test reminder (every 7 days after registering)
+
+Each registered student (the individual, or every team member) is emailed a reminder to take the Round 1 test 7 days after
+they registered, and again every 7 days, until the test's last date (`TEST_DEADLINE` in the main script). It goes out from head
+office like the other student emails, between 9 AM and 9 PM India time, and every reminder sent is listed in the "Reminders" tab.
+
+1. In the registration sheet's Apps Script project: **+ → Script**, name it `StudentReminder`, paste `backend/student-reminder.gs`, Save.
+2. Run `testStudentReminder`: a sample comes to your own inbox only.
+3. Run `previewStudentReminders`: the log shows who would get a reminder right now (nothing is sent).
+4. Go live: run `setupStudentReminders` once, from your own account. To stop: run `stopStudentReminders`.
