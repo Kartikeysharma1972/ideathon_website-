@@ -143,15 +143,13 @@ function reportHtml(r) {
     return '<div style="' + font + 'font-size:12px;font-weight:bold;letter-spacing:1.5px;color:' + BLUE + ';margin:26px 6px 8px">' + text +
       (note ? ' <span style="color:' + MUTED + ';font-weight:normal;letter-spacing:0">· ' + note + '</span>' : '') + '</div>';
   };
-  // a ranked list with bars; the rest are added up as "Others"
-  const bars = function (title, rows, top) {
+  // a ranked list with bars, every name shown (no "Others")
+  const bars = function (title, rows) {
     if (!rows.length) return '';
-    const shown = rows.slice(0, top), rest = rows.slice(top).reduce(function (n, x) { return n + x[1]; }, 0);
-    if (rest) shown.push(['Others (' + (rows.length - top) + ')', rest]);
-    const max = Math.max.apply(null, shown.map(function (x) { return x[1]; }));
+    const max = Math.max.apply(null, rows.map(function (x) { return x[1]; }));
     return '<div style="border:1px solid ' + LINE + ';border-radius:14px;padding:14px 16px;margin:6px">' +
       '<div style="' + font + 'font-size:14px;font-weight:bold;color:' + INK + ';margin-bottom:8px">' + title + '</div>' +
-      '<table width="100%" cellpadding="0" cellspacing="0" role="presentation">' + shown.map(function (x) {
+      '<table width="100%" cellpadding="0" cellspacing="0" role="presentation">' + rows.map(function (x) {
         const w = Math.max(3, Math.round(100 * x[1] / max));
         return '<tr><td width="38%" style="' + font + 'font-size:13px;color:' + INK + ';padding:5px 8px 5px 0">' + esc(x[0]) + '</td>' +
           '<td style="padding:5px 0"><table width="' + w + '%" cellpadding="0" cellspacing="0" role="presentation"><tr><td height="10" style="background:#399aff;border-radius:6px;font-size:0;line-height:0">&nbsp;</td></tr></table></td>' +
@@ -171,14 +169,15 @@ function reportHtml(r) {
     '<div style="padding:4px 14px 22px">' +
     heading(r.dayLabel.toUpperCase(), r.isToday ? 'so far' : 'full day') +
     cards([card(fmt(d.students), 'Students registered', vs, true), card(fmt(d.regs), 'Registrations', split(d)), card(fmt(d.cities.length), 'Cities', d.cities[0] ? 'Most: ' + esc(d.cities[0][0]) : 'None yet')]) +
-    bars('Where they registered from', d.cities, 8) +
-    bars('Schools / organizations', d.orgs.length ? d.orgs : d.schools, 5) +
+    bars('Where they registered from', d.cities) +
+    bars('Schools', d.schools) +
+    bars('Organizations (students through their link)', d.orgs) +
     heading('TILL DATE') +
     cards([card(fmt(a.students), 'Total students', 'since registration opened', true), card(fmt(a.regs), 'Registrations', split(a)), card(fmt(a.cities.length), 'Cities', a.schools.length + ' schools')]) +
-    bars('Top cities', a.cities, 10) +
-    bars('Top schools', a.schools, 5) +
-    (a.orgs.length ? bars('Organizations (students through their link)', a.orgs, 5) : '') +
-    bars('Category', a.cats, 3) +
+    bars('Cities', a.cities) +
+    bars('Schools', a.schools) +
+    bars('Organizations (students through their link)', a.orgs) +
+    bars('Category', a.cats) +
     '<div style="' + font + 'font-size:11px;color:' + MUTED + ';margin:18px 6px 0">Students are counted per person (a team of 4 is 4 students). ' +
     (r.tests ? r.tests + ' test registration' + (r.tests > 1 ? 's are' : ' is') + ' left out. ' : '') + 'Sent automatically from the registration sheet.</div>' +
     '</div></td></tr></table></div>';
