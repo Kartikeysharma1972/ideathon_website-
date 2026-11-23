@@ -108,7 +108,7 @@ function sendReminderMail(to, name, id) {
     p('<b>Already taken the test?</b> Great job! You don’t need to do anything more for now. We will email you your result and the next steps soon.') +
     p('If you have any questions, or need help logging in, ask a parent or teacher to write to us at <a href="mailto:' + CONTACT_EMAIL + '">' + CONTACT_EMAIL + '</a>.') +
     p('Warm regards,<br>' + SIGN_OFF) + '</div>';
-  const text = html.replace(/<a href="[^"]*">([^<]*)<\/a>/g, '$1').replace(/<li>/g, '- ').replace(/<\/(p|li)>/g, '\n').replace(/<br>/g, '\n')
+  const text = html.replace(/<a href="[^"]*">([^<]*)<\/a>/g, '$1').replace(/<li>/g, '- ').replace(/<\/p>/g, '\n\n').replace(/<\/li>/g, '\n').replace(/<br>/g, '\n')
     .replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
   return deliver(to, subject, text, html);
 }
