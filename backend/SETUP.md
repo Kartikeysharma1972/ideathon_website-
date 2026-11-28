@@ -30,7 +30,7 @@ It saves each one as a row in a Google Sheet: a **Teams** tab (individuals and t
 - Only people you share the Google Sheet with can see the data.
 - Mentor profile uploads (CV / resume, up to 5 MB) are saved in a Google Drive folder called **Ideathon 2026 Mentor Profiles** in the same Google account, and the **Mentors** tab gets a link to each file. That is why Google also asks for Drive permission during step 4.
 - Answers that start with `=`, `+`, `-` or `@` are stored as plain text so they can never run as spreadsheet formulas.
-- Emails are switched on separately at the top of the script: `SEND_MENTOR_EMAILS = true` (mentors get the registration email) and `SEND_STUDENT_EMAILS = false` (student registrations are only saved for now). Change one and publish a new version.
+- Emails are switched on separately at the top of the script: `SEND_MENTOR_EMAILS = true` (mentors get the registration email) and `SEND_STUDENT_EMAILS = true` (students get their LMS login email). Change one and publish a new version.
 - Emails go out from `headoffice.codevidhya@codevidhya.com` (`SEND_FROM`) if the script is deployed from that Google account, or if the deploying account has it as a Gmail "Send mail as" address. Otherwise they go from the deploying account, with replies going to head office. The Mentors tab's last column, **Email sent**, shows what happened for each mentor.
 - After pasting a new version that sends email, run `testMentorMail` once from the editor (▶ Run). Google asks for Gmail permission, and a sample mentor email arrives in your own inbox.
 
@@ -73,7 +73,7 @@ The 3D models are already compressed (about 1.9 MB in total). Three server setti
 - `sendPendingStudentEmails` runs every minute (Google's shortest timer) and, while a student who registered in the last 5 minutes is still waiting, keeps checking every 5 seconds. As soon as the password appears it sends the email and fills in the user ID, status and time (the password is never copied into the registration sheet). The trigger's running time is capped at 4 hours a day (`FAST_CHECK_MINUTES_PER_DAY`, under Google's 6-hour limit); after that, students are checked once a minute.
 - **One-time setup:** after pasting the script, run `setupStudentEmailTrigger` once from the editor (▶ Run) and allow the permissions. `testStudentMail` sends a sample to your own inbox; `checkLmsLogins` shows whether the LMS sheet has passwords.
 - Two students with the same email get one email (the second row says *Same email already sent*). A student whose login has not appeared after 7 days (`GIVE_UP_HOURS`) is marked *No LMS login after 168 hours*; fix the LMS sheet, then change that status back to `Waiting for LMS login` to send it.
-- `SEND_STUDENT_EMAILS = false` stops new students from being queued and pauses sending.
+- `SEND_STUDENT_EMAILS = false` stops new students from being queued and pauses sending. Students who registered while it was off are added by running `queueEarlierStudents` once.
 - The "Your access to Codevidhya…" email with a login link is sent by the LMS itself, not by this script; switch it off in the LMS if it is not wanted.
 
 ## Daily registration report (email with cards)

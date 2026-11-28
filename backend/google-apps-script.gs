@@ -30,8 +30,8 @@ const MAX_FILE_BYTES = 5 * 1024 * 1024;
 const FILE_TYPES = /\.(pdf|docx?|jpe?g|png)$/i;
 
 // confirmation emails, switched on separately (publish a new version after changing).
-// Student emails are OFF until the LMS login details are finalised; mentors and organizations still get theirs.
-const SEND_STUDENT_EMAILS = false;
+// Students, mentors and organizations all get theirs. A student's email waits until their LMS password is in the LMS sheet.
+const SEND_STUDENT_EMAILS = true;
 const SEND_MENTOR_EMAILS = true;
 // the organization's coordinator gets their students' registration link by email
 const SEND_ORG_EMAILS = true;
@@ -230,6 +230,35 @@ function setupStudentEmailTrigger() {
   ScriptApp.getProjectTriggers().forEach(function (t) { if (t.getHandlerFunction() === 'sendPendingStudentEmails') ScriptApp.deleteTrigger(t); });
   ScriptApp.newTrigger('sendPendingStudentEmails').timeBased().everyMinutes(1).create();
   Logger.log('Done: student emails are checked every minute, and every 5 seconds while a student is waiting for their login.');
+}
+
+// run once from the editor (Run ▶) to also email the students who registered while student emails were off:
+// every registered student email that is not in the "Student emails" tab yet is added there as waiting for their LMS login,
+// and goes out like a new registration's. Safe to run again: an email already in that tab is never added twice.
+function queueEarlierStudents() {
+  const queue = sheetFor('Student emails', STUDENT_EMAIL_HEADERS);
+  const have = {};
+  if (queue.getLastRow() > 1) queue.getRange(2, 4, queue.getLastRow() - 1, 1).getValues().forEach(function (r) { have[String(r[0]).trim().toLowerCase()] = true; });
+  const rows = [];
+  studentTabs().forEach(function (tab) {
+    const values = tab.getDataRange().getDisplayValues();
+    if (values.length < 2) return;
+    const head = values[0].map(function (h) { return String(h).trim().toLowerCase(); });
+    const people = studentColumns(head);
+    const cid = head.indexOf('registration id');
+    values.slice(1).forEach(function (r) {
+      people.forEach(function (p) {
+        const email = String(r[p.email]).trim().toLowerCase();
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || have[email]) return;
+        have[email] = true;
+        const grade = p.grade >= 0 ? String(r[p.grade]).trim() : '';
+        rows.push([cid >= 0 ? r[cid] : '', new Date(), clean(p.name >= 0 ? String(r[p.name]).trim() : ''), clean(email),
+          !grade ? '' : /^class\b/i.test(grade) ? clean(grade) : 'Class ' + clean(grade), '', WAITING_FOR_LOGIN, '']);
+      });
+    });
+  });
+  if (rows.length) queue.getRange(queue.getLastRow() + 1, 1, rows.length, STUDENT_EMAIL_HEADERS.length).setValues(rows);
+  Logger.log('Added ' + rows.length + ' earlier students to the "Student emails" tab; each gets their email once their LMS password is in the LMS sheet.');
 }
 
 // run from the editor to see the student email in your own inbox (with a sample login)
