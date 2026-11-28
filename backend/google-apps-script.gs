@@ -529,8 +529,9 @@ function sendOrganizationMail(id, link, d) {
     ['h', 'What students gain'],
     ['ul', [
       'A participation certificate for every student',
+      'Exciting prizes for the winning teams',
       'Mentorship from MNIT student innovators',
-      'A structured mentorship and incubation track, with a winning prize, for the winning team',
+      'A structured mentorship and incubation track for the winning team',
       'The experience of presenting their ideas at one of India’s leading technical institutes'
     ]],
     ['h', 'Your students’ registration link'],
