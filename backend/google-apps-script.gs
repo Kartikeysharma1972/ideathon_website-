@@ -537,6 +537,14 @@ function sendOrganizationMail(id, link, d) {
   return deliver(to, subject, text, html);
 }
 
+// run this from the editor (pick it in the function dropdown, then Run ▶) to send a sample organization email to yourself
+function testOrganizationMail() {
+  Logger.log(sendOrganizationMail('ORG26-TEST', SITE_URL + 'register.html?org=ORG26-TEST', {
+    name: 'Sample Public School',
+    coordinator: { name: 'Test Coordinator', email: Session.getEffectiveUser().getEmail() }
+  }));
+}
+
 // opening the web app URL in a browser shows it is live; ?org=ORG26-0001 returns that organization's name and city
 function doGet(e) {
   const orgId = e && e.parameter && e.parameter.org;
