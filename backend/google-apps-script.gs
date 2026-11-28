@@ -37,8 +37,8 @@ const SEND_MENTOR_EMAILS = true;
 const SEND_ORG_EMAILS = true;
 // the website; an organization's student link is SITE_URL + 'register.html?org=ORG26-0001'
 const SITE_URL = 'https://live.codevidhya.com/ideathon-2026/';
-// shared Google Drive folder with the Ideathon documents and key details, linked in the organization email
-const ORG_RESOURCES_URL = 'https://drive.google.com/drive/folders/1Hk8OftzTp5ooB-gm5hYry8e0eNOYUzUF?usp=drive_link';
+// the outreach kit (Google Drive folder with the Ideathon documents and material for schools), linked in the organization email
+const ORG_RESOURCES_URL = 'https://drive.google.com/drive/folders/1eJOOo4Fox_gOXB8OFvEcMO1h_UEYj4Do?usp=sharing';
 // emails go out from this address when the script runs under it, or when the script owner's Gmail
 // has it added as a "Send mail as" address; otherwise they go from the owner's account with replies to it
 const SEND_FROM = 'headoffice.codevidhya@codevidhya.com';
@@ -508,32 +508,48 @@ function sendOrganizationMail(id, link, d) {
   const c = d.coordinator || {};
   const to = String(c.email || '').trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) return 'Not sent: invalid email';
-  const name = String(c.name || 'there').trim().split(/\s+/)[0];
+  const name = String(c.name || '').trim();
   const org = String(d.name || 'your organization').trim();
-  const forward = 'The MIIC × Codevidhya Ideathon 2026 is open for students of Grades 6–8 and 9–12. Register on your own or as a team of up to 6, in about 5 minutes: ' + link;
+  const a = url => '<a href="' + url + '">' + url + '</a>';
   const subject = org + ' is registered: MIIC × Codevidhya Ideathon 2026';
-  const html = '<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.55;color:#1d2433;max-width:620px">' +
-    '<p>Hi ' + esc(name) + ',</p>' +
-    '<p>Thank you for registering <b>' + esc(org) + '</b> for the <b>MIIC × Codevidhya Ideathon 2026</b>! Your Organization ID is <b>' + id + '</b>.</p>' +
-    '<p style="margin:18px 0 6px"><b>Your students’ registration link</b></p>' +
-    '<p style="margin:0 0 10px"><a href="' + link + '">' + link + '</a></p>' +
-    '<p style="margin:0 0 10px">Share this link with your students and their parents. When a student registers through it, your organization’s name and city are filled in for them, and the registration is counted for ' + esc(org) + '.</p>' +
-    '<p style="margin:18px 0 6px"><b>What happens next</b></p>' +
-    '<ol style="margin:0 0 10px;padding-left:22px">' +
-    '<li style="margin:3px 0">Students register on their own or as a team of up to 6 (Grades 6–8 and 9–12).</li>' +
-    '<li style="margin:3px 0"><b>Round 1:</b> an online aptitude test on our LMS. We will share the date by email.</li>' +
-    '<li style="margin:3px 0"><b>Round 2:</b> shortlisted teams work on their idea with an MNIT mentor and pitch it online.</li>' +
-    '<li style="margin:3px 0"><b>Round 3:</b> up to 20 finalist teams pitch live at MNIT, Jaipur.</li>' +
-    '</ol>' +
-    '<p style="margin:0 0 10px">Most participants are under 18, so please help your students get their parent’s or guardian’s consent before they register.</p>' +
-    '<p style="margin:18px 0 6px"><b>Ideathon resources for your organization</b></p>' +
-    '<p style="margin:0 0 10px">We have put together a shared Google Drive folder with the official Ideathon documents, guidelines and other important details. You can refer to it anytime and share it with your teachers and students:</p>' +
-    '<p style="margin:0 0 10px"><a href="' + ORG_RESOURCES_URL + '">' + ORG_RESOURCES_URL + '</a></p>' +
-    '<p style="margin:18px 0 6px"><b>A message you can forward to students and parents</b></p>' +
-    '<p style="margin:0 0 10px;padding:10px 14px;background:#f6faff;border-radius:8px">' + esc(forward) + '</p>' +
-    '<p style="margin:0 0 10px">For any questions, write to us at <b>' + CONTACT_EMAIL + '</b>.</p>' +
-    '<p style="margin:0 0 10px">Warm regards,<br>' + SIGN_OFF + '</p></div>';
-  const text = html.replace(/<\/p>/g, '\n\n').replace(/<\/li>/g, '\n').replace(/<br>/g, '\n').replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\n{3,}/g, '\n\n').trim();
+  const sections = [
+    ['p', 'Dear ' + (name ? esc(name) : 'Sir/Ma’am') + ','],
+    ['p', 'Greetings from Codevidhya!'],
+    ['p', 'Thank you for registering <b>' + esc(org) + '</b> for the <b>MIIC × Codevidhya Ideathon 2026</b>, a school innovation challenge we are organising with the MNIT Innovation &amp; Incubation Centre (MIIC), MNIT Jaipur. Your Organization ID is <b>' + id + '</b>.'],
+    ['p', 'The Ideathon asks students to spot a real-world problem, build a solution around it and pitch it the way a startup would. Students learn problem-solving, teamwork and presentation skills that go beyond the classroom.'],
+    ['h', 'Programme at a glance'],
+    ['ul', [
+      '<b>Who can take part:</b> Students of Grades 6–8 (Junior) and 9–12 (Senior), on their own or in teams of up to 6',
+      '<b>Themes:</b> Healthcare, Rural Development, Education, Sustainability, and Innovation for Good',
+      '<b>Round 1 (online):</b> An aptitude test that checks how students reason and come up with ideas',
+      '<b>Round 2 (online):</b> Shortlisted teams develop their idea with guidance from MNIT student mentors and submit an idea report, video and presentation',
+      '<b>Round 3 (MNIT campus):</b> Up to 20 finalist teams pitch live to a jury at MNIT Jaipur',
+      '<b>Fee:</b> Registration and participation are completely free at every stage'
+    ]],
+    ['h', 'What students gain'],
+    ['ul', [
+      'A participation certificate for every student',
+      'Mentorship from MNIT student innovators',
+      'A structured mentorship and incubation track, with a winning prize, for the winning team',
+      'The experience of presenting their ideas at one of India’s leading technical institutes'
+    ]],
+    ['h', 'Your students’ registration link'],
+    ['p', a(link)],
+    ['p', 'Please share this link with your students and their parents. Every student who registers through it is counted under ' + esc(org) + ', and your organisation’s name and city are filled in for them. Registration takes about 5 minutes.'],
+    ['h', 'Outreach kit'],
+    ['p', 'We are sharing an outreach kit with you, with the official Ideathon documents, guidelines and material you can share with your teachers and students:<br>' + a(ORG_RESOURCES_URL)],
+    ['p', 'We would be happy to walk you, your teachers or your students through the programme, in person or online. Just reply to this email and let us know a time that suits you.'],
+    ['p', 'We look forward to seeing ' + esc(org) + '’s young innovators at the Ideathon.'],
+    ['p', 'Warm regards,<br>' + SIGN_OFF + '<br>' + CONTACT_EMAIL + ' | ' + a(SITE_URL)]
+  ];
+  const html = '<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.55;color:#1d2433;max-width:620px">' + sections.map(function (s) {
+    if (s[0] === 'h') return '<p style="margin:18px 0 6px"><b>' + s[1] + '</b></p>';
+    if (s[0] === 'ul') return '<ul style="margin:0 0 10px;padding-left:22px">' + s[1].map(function (li) { return '<li style="margin:3px 0">' + li + '</li>'; }).join('') + '</ul>';
+    return '<p style="margin:0 0 10px">' + s[1] + '</p>';
+  }).join('') + '</div>';
+  const text = sections.map(function (s) {
+    return s[0] === 'ul' ? s[1].map(function (li) { return '- ' + li; }).join('\n') : s[1];
+  }).join('\n\n').replace(/<br>/g, '\n').replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
   return deliver(to, subject, text, html);
 }
 
