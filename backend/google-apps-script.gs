@@ -37,6 +37,8 @@ const SEND_MENTOR_EMAILS = true;
 const SEND_ORG_EMAILS = true;
 // the website; an organization's student link is SITE_URL + 'register.html?org=ORG26-0001'
 const SITE_URL = 'https://live.codevidhya.com/ideathon-2026/';
+// shared Google Drive folder with the Ideathon documents and key details, linked in the organization email
+const ORG_RESOURCES_URL = 'https://drive.google.com/drive/folders/1Hk8OftzTp5ooB-gm5hYry8e0eNOYUzUF?usp=drive_link';
 // emails go out from this address when the script runs under it, or when the script owner's Gmail
 // has it added as a "Send mail as" address; otherwise they go from the owner's account with replies to it
 const SEND_FROM = 'headoffice.codevidhya@codevidhya.com';
@@ -524,6 +526,9 @@ function sendOrganizationMail(id, link, d) {
     '<li style="margin:3px 0"><b>Round 3:</b> up to 20 finalist teams pitch live at MNIT, Jaipur.</li>' +
     '</ol>' +
     '<p style="margin:0 0 10px">Most participants are under 18, so please help your students get their parent’s or guardian’s consent before they register.</p>' +
+    '<p style="margin:18px 0 6px"><b>Ideathon resources for your organization</b></p>' +
+    '<p style="margin:0 0 10px">We have put together a shared Google Drive folder with the official Ideathon documents, guidelines and other important details. You can refer to it anytime and share it with your teachers and students:</p>' +
+    '<p style="margin:0 0 10px"><a href="' + ORG_RESOURCES_URL + '">' + ORG_RESOURCES_URL + '</a></p>' +
     '<p style="margin:18px 0 6px"><b>A message you can forward to students and parents</b></p>' +
     '<p style="margin:0 0 10px;padding:10px 14px;background:#f6faff;border-radius:8px">' + esc(forward) + '</p>' +
     '<p style="margin:0 0 10px">For any questions, write to us at <b>' + CONTACT_EMAIL + '</b>.</p>' +
