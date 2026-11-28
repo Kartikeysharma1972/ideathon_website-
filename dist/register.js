@@ -475,8 +475,34 @@
     }
     if (persist) save();
   }
-  nextBtn.addEventListener('click', () => {
+  // marks the email fields of students who are already registered; returns true when there were any
+  function flagRegistered(emails, message) {
+    const taken = new Set(emails.map(e => String(e).toLowerCase()));
+    let first = null;
+    for (let i = 1; i <= count(); i++) {
+      if (!taken.has(getMember(i).email.toLowerCase())) continue;
+      const field = form.elements[`m${i}_email`].closest('.field');
+      setError(field, 'This email is already registered. Each student can register only once.');
+      first = first || field;
+    }
+    if (!first) return false;
+    formError.textContent = message || 'Already registered: each student can register only once. To change your details, write to support@codevidhya.com.';
+    first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    first.querySelector('input')?.focus({ preventScroll: true });
+    return true;
+  }
+
+  nextBtn.addEventListener('click', async () => {
     if (!validateStep(current)) return;
+    // stop a student who is already registered on the first step, before they fill in the rest
+    if (current === 0) {
+      nextBtn.disabled = true;
+      const emails = [];
+      for (let i = 1; i <= count(); i++) emails.push(getMember(i).email.toLowerCase());
+      const taken = await window.IdeathonForms.registeredEmails(emails);
+      nextBtn.disabled = false;
+      if (flagRegistered(taken)) return;
+    }
     if (current < steps.length - 1) show(current + 1);
     else submit();
   });
@@ -676,8 +702,14 @@
       done.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (error) {
       console.error(error);
-      formError.textContent = 'Could not submit right now. Check your internet and try again. Your answers are saved.';
       nextBtn.innerHTML = label;
+      if (error.duplicate) {
+        // the server found an email that is already registered: back to the student details, with that email marked
+        show(0, false);
+        if (!flagRegistered(error.emails, error.message)) formError.textContent = error.message;
+        return;
+      }
+      formError.textContent = 'Could not submit right now. Check your internet and try again. Your answers are saved.';
     } finally {
       nextBtn.disabled = false;
     }

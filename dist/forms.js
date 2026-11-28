@@ -14,8 +14,24 @@
     const res = await fetch(endpoint(), { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
     if (!res.ok) throw new Error(`Server replied ${res.status}`);
     const out = await res.json().catch(() => ({}));
-    if (out.ok === false) throw new Error(out.error || 'Submission failed');
+    if (out.ok === false) {
+      const error = new Error(out.error || 'Submission failed');
+      // the server turned away an email that is already registered
+      if (out.duplicate) { error.duplicate = true; error.emails = out.emails || []; }
+      throw error;
+    }
     return { ok: true, preview: false, id: out.id || localId(type) };
+  }
+  // which of these student emails are already registered; [] when unknown (offline or preview), since the server checks again on submit
+  async function registeredEmails(emails) {
+    if (!endpoint() || !emails.length) return [];
+    try {
+      const res = await fetch(`${endpoint()}?emails=${encodeURIComponent(emails.join(','))}`);
+      const out = await res.json();
+      return out.ok && Array.isArray(out.registered) ? out.registered : [];
+    } catch {
+      return [];
+    }
   }
   function localId(type) {
     const n = Math.floor(1000 + Math.random() * 9000);
@@ -28,7 +44,7 @@
     const out = await res.json().catch(() => ({}));
     return out.ok ? out.org : null;
   }
-  window.IdeathonForms = { submit, lookupOrganization, isPreview: () => !endpoint() };
+  window.IdeathonForms = { submit, lookupOrganization, registeredEmails, isPreview: () => !endpoint() };
 
   // ---- mentor form (home page) ----
   const form = document.getElementById('mentor-form');

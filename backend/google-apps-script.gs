@@ -64,6 +64,11 @@ function doPost(e) {
     const data = JSON.parse(e.postData.contents);
     if (data.type === 'organization') return registerOrganization(lock, data);
     const isMentor = data.type === 'mentor';
+    // a student can register only once: an email that is already in the registrations is turned away, and nothing is saved
+    if (!isMentor) {
+      const taken = alreadyRegistered((data.members || []).map(function (m) { return m.email; }));
+      if (taken.length) return json({ ok: false, duplicate: true, emails: taken, error: duplicateMessage(taken) });
+    }
     const sheet = isMentor ? sheetFor('Mentors', MENTOR_HEADERS) : studentsTab();
     const id = (isMentor ? 'MEN' : 'IDT') + '26-' + String(sheet.getLastRow()).padStart(4, '0');
     sheet.appendRow(isMentor ? mentorRow(id, data) : teamRow(id, data));
@@ -557,13 +562,48 @@ function testOrganizationMail() {
 }
 
 // opening the web app URL in a browser shows it is live; ?org=ORG26-0001 returns that organization's name and city
+// ?emails=a@x.com,b@y.com returns which of those emails are already registered (yes/no only, no other details),
+// so the registration form can stop a student on its first step
 function doGet(e) {
   const orgId = e && e.parameter && e.parameter.org;
   if (orgId) {
     const org = findOrganization(orgId);
     return json(org ? { ok: true, org: org } : { ok: false, error: 'Organization not found' });
   }
+  const emails = e && e.parameter && e.parameter.emails;
+  if (emails) return json({ ok: true, registered: alreadyRegistered(String(emails).split(',').slice(0, 6)) });
   return json({ ok: true, service: 'Ideathon 2026 registrations' });
+}
+
+// ---------- one registration per student email ----------
+// every student email in the registration tabs (any column whose header has "email" in it)
+function registeredEmails() {
+  const seen = {};
+  studentTabs().forEach(function (tab) {
+    const values = tab.getDataRange().getDisplayValues();
+    if (values.length < 2) return;
+    const head = values[0].map(function (h) { return String(h).trim().toLowerCase(); });
+    studentColumns(head).forEach(function (p) {
+      values.slice(1).forEach(function (r) {
+        const email = String(r[p.email]).trim().toLowerCase();
+        if (email) seen[email] = true;
+      });
+    });
+  });
+  return seen;
+}
+
+// the given emails that are already registered
+function alreadyRegistered(emails) {
+  const seen = registeredEmails();
+  return emails.map(function (m) { return String(m || '').trim().toLowerCase(); }).filter(function (m, i, all) {
+    return m && seen[m] && all.indexOf(m) === i;
+  });
+}
+
+function duplicateMessage(taken) {
+  return taken.join(', ') + (taken.length === 1 ? ' is' : ' are') + ' already registered for the Ideathon. Each student can register only once. ' +
+    'To change your details, write to ' + CONTACT_EMAIL + '.';
 }
 
 function teamRow(id, d) {
