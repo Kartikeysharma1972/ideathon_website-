@@ -523,24 +523,24 @@ function sendOrganizationMail(id, link, d) {
       '<b>Who can take part:</b> Students of Grades 6–8 (Junior) and 9–12 (Senior), on their own or in teams of up to 6',
       '<b>Themes:</b> Healthcare, Rural Development, Education, Sustainability, and Innovation for Good',
       '<b>Round 1 (online):</b> An aptitude test that checks how students reason and come up with ideas',
-      '<b>Round 2 (online):</b> Shortlisted teams develop their idea with guidance from MNIT student mentors and submit an idea report, video and presentation',
+      '<b>Round 2 (online):</b> Shortlisted teams develop their idea and submit an idea Presentation with an explanatory video.',
       '<b>Round 3 (MNIT campus):</b> Up to 20 finalist teams pitch live to a jury at MNIT Jaipur',
-      'Fee: Registration and participation are completely free at every stage',
-      '<b>What students gain</b>'
+      'Fee: Registration and participation are completely free at every stage'
     ].join('<br>'),
+    '<b>What students gain</b>',
     [
       '-A participation certificate for every student.',
       '-Mentorship from MNIT student innovators.',
       '-A structured mentorship and incubation track with winning prize for the winning team.',
-      '-The experience of presenting their ideas at one of India’s leading technical institutes',
-      'Your students’ registration link'
+      '-The experience of presenting their ideas at one of India’s leading technical institutes'
     ].join('<br>'),
+    'Your students’ registration link:',
     a(link),
     'Please share this link with your students and their parents. Every student who registers through it is counted under ' + esc(org) + ', and your organisation’s name and city are filled in for them. Registration takes about 5 minutes.',
-    'We are sharing an outreach kit with you<br>' + a(ORG_RESOURCES_URL),
+    'We are sharing an outreach kit with you:<br>' + a(ORG_RESOURCES_URL),
     'We would be happy to walk you, your teachers or your students through the programme, in person or online. Just reply to this email and let us know a time that suits you.',
     'We look forward to seeing ' + esc(org) + '’s young innovators at the Ideathon.',
-    'Warm regards,<br>Team MIIC × Codevidhya Ideathon 2026<br>support@codevidhya.com | ' + a(SITE_URL)
+    'Warm regards,<br>Team MIIC × Codevidhya Ideathon 2026'
   ];
   const html = '<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.55;color:#1d2433;max-width:620px">' +
     paragraphs.map(function (p) { return '<p style="margin:0 0 12px">' + p + '</p>'; }).join('') + '</div>';
